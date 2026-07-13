@@ -1,6 +1,6 @@
 package com.dsm.oshu;
 
-import com.dsm.oshu.infrastructure.publicdata.PublicDataProperties;
+import com.dsm.oshu.store.infrastructure.PublicDataProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

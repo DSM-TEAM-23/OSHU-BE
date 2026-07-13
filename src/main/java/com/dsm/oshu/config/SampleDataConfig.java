@@ -1,11 +1,11 @@
 package com.dsm.oshu.config;
 
-import com.dsm.oshu.domain.store.Promotion;
-import com.dsm.oshu.domain.store.PromotionRepository;
-import com.dsm.oshu.domain.store.Store;
-import com.dsm.oshu.domain.store.StoreRepository;
-import com.dsm.oshu.domain.store.TimeSale;
-import com.dsm.oshu.domain.store.TimeSaleRepository;
+import com.dsm.oshu.promotion.domain.Promotion;
+import com.dsm.oshu.promotion.domain.PromotionRepository;
+import com.dsm.oshu.store.domain.Store;
+import com.dsm.oshu.store.domain.StoreRepository;
+import com.dsm.oshu.timesale.domain.TimeSale;
+import com.dsm.oshu.timesale.domain.TimeSaleRepository;
 import java.time.LocalDateTime;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;

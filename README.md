@@ -5,12 +5,16 @@
 ## 구조
 
 ```
-domain/          JPA 엔티티와 Repository
-application/     유스케이스 서비스와 요청·응답 DTO
-infrastructure/  소상공인시장진흥공단 공공 API 어댑터
-web/             REST Controller와 예외 응답
-config/          Security, Swagger, 샘플 데이터 설정
+auth/             domain, presentation, service
+store/            domain, presentation, service, exception, infrastructure
+promotion/        domain, presentation, service, exception
+timesale/         domain, presentation, service, exception
+common/           전역 예외 처리와 공통 페이징·검증
+config/           Security, Swagger, 샘플 데이터 설정
 ```
+
+각 기능 패키지의 `presentation`에는 Controller와 DTO, `domain`에는 Entity와 Repository,
+`service`에는 유스케이스와 변환·조회 보조 클래스, `exception`에는 기능 전용 예외를 둡니다.
 
 ## 실행
 
