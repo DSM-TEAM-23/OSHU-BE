@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Promotions", description = "홍보 포스터와 행사 조회")
 @RestController
-@RequestMapping("/api/v1/promotions")
+@RequestMapping("/promotions")
 public class PromotionController {
     private final PromotionQueryService promotionQueryService;
     public PromotionController(PromotionQueryService promotionQueryService) { this.promotionQueryService = promotionQueryService; }

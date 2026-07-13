@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Owner Time Sales", description = "점주 타임세일 관리")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/api/v1/owner")
+@RequestMapping("/owner")
 public class OwnerTimeSaleController {
     private final OwnerTimeSaleService ownerTimeSaleService;
 

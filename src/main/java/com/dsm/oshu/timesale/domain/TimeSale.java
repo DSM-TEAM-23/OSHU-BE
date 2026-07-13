@@ -15,15 +15,33 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "time_sales")
 public class TimeSale {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "store_id", nullable = false) private Store store;
-    @Column(nullable = false) private String productName;
-    @Column(nullable = false) private Integer originalPrice;
-    @Column(nullable = false) private Integer salePrice;
-    @Column(nullable = false) private LocalDateTime startAt;
-    @Column(nullable = false) private LocalDateTime endAt;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    private Store store;
+
+    @Column(nullable = false)
+    private String productName;
+
+    @Column(nullable = false)
+    private Integer originalPrice;
+
+    @Column(nullable = false)
+    private Integer salePrice;
+
+    @Column(nullable = false)
+    private LocalDateTime startAt;
+
+    @Column(nullable = false)
+    private LocalDateTime endAt;
+
     private String notice;
-    @Column(nullable = false) private String status = "SCHEDULED";
+
+    @Column(nullable = false)
+    private String status = "SCHEDULED";
 
     protected TimeSale() {
     }

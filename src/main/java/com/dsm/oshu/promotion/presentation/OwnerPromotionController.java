@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Owner Promotions", description = "점주 홍보 관리")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/api/v1/owner")
+@RequestMapping("/owner")
 public class OwnerPromotionController {
     private final OwnerPromotionService ownerPromotionService;
 

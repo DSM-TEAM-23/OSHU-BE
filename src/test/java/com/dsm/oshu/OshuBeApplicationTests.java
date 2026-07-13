@@ -24,7 +24,7 @@ class OshuBeApplicationTests {
 
     @Test
     void mapStoresIsPublic() throws Exception {
-        mockMvc.perform(get("/api/v1/stores/map")
+        mockMvc.perform(get("/stores/map")
                         .param("latitude", "36.3622").param("longitude", "127.3449"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$").isArray());
     }
@@ -34,7 +34,7 @@ class OshuBeApplicationTests {
         String payload = """
                 {"name":"테스트 가게","category":"카페","address":"유성구","latitude":36.36,"longitude":127.34}
                 """;
-        mockMvc.perform(post("/api/v1/owner/stores").contentType(MediaType.APPLICATION_JSON).content(payload))
+        mockMvc.perform(post("/owner/stores").contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isForbidden());
     }
 }

@@ -15,15 +15,33 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "promotions")
 public class Promotion {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "store_id", nullable = false) private Store store;
-    @Column(nullable = false) private String type;
-    @Column(nullable = false) private String title;
-    @Column(length = 2000) private String content;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    private Store store;
+
+    @Column(nullable = false)
+    private String type;
+
+    @Column(nullable = false)
+    private String title;
+
+    @Column(length = 2000)
+    private String content;
+
     private String imageUrl;
-    @Column(nullable = false) private LocalDateTime startAt;
-    @Column(nullable = false) private LocalDateTime endAt;
-    @Column(nullable = false) private String status = "ACTIVE";
+
+    @Column(nullable = false)
+    private LocalDateTime startAt;
+
+    @Column(nullable = false)
+    private LocalDateTime endAt;
+
+    @Column(nullable = false)
+    private String status = "ACTIVE";
 
     protected Promotion() {
     }
