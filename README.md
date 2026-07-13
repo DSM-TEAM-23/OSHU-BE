@@ -19,7 +19,7 @@ Java 17이 필요합니다.
 ```bash
 export PUBLIC_DATA_SERVICE_KEY='공공데이터포털_일반_인증키'
 export OSHU_OWNER_TOKEN='점주용_개발_토큰'
-./mvnw spring-boot:run
+./gradlew bootRun
 ```
 
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
@@ -42,5 +42,5 @@ export OSHU_OWNER_TOKEN='점주용_개발_토큰'
 ## 검증
 
 ```bash
-./mvnw test
+./gradlew test
 ```

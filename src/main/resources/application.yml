@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: "OSHU API"
+  datasource:
+    url: "jdbc:h2:mem:oshu;MODE=PostgreSQL;DB_CLOSE_DELAY=-1"
+    username: sa
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+oshu:
+  public-data:
+    base-url: "https://apis.data.go.kr/B553077/api/open/sdsc2"
+    service-key: "${PUBLIC_DATA_SERVICE_KEY:}"
+  owner-token: "${OSHU_OWNER_TOKEN:oshu-owner-dev-token}"
