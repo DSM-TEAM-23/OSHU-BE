@@ -13,11 +13,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.MockMvc;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Utilities;
+import software.amazon.awssdk.services.s3.model.GetUrlRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
+import java.net.URL;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -27,6 +38,9 @@ class OshuBeApplicationTests {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockBean
+    private S3Client s3Client;
 
     @Test
     void contextLoads() {
@@ -123,6 +137,11 @@ class OshuBeApplicationTests {
     void ownerImageUploadReturnsPublicPath() throws Exception {
         signUp("upload-owner", "password123!");
         String accessToken = login("upload-owner", "password123!");
+        S3Utilities utilities = org.mockito.Mockito.mock(S3Utilities.class);
+        when(s3Client.utilities()).thenReturn(utilities);
+        when(utilities.getUrl(any(GetUrlRequest.class))).thenReturn(new URL("https://oshu-media-zo23-452529558267.s3.us-east-1.amazonaws.com/uploads/test.png"));
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class))).thenReturn(null);
+
         MockMultipartFile image = new MockMultipartFile(
                 "image",
                 "test.png",
@@ -133,7 +152,7 @@ class OshuBeApplicationTests {
                         .file(image)
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.imageUrl").value(org.hamcrest.Matchers.startsWith("/uploads/")));
+                .andExpect(jsonPath("$.imageUrl").value(org.hamcrest.Matchers.startsWith("https://oshu-media-zo23-452529558267.s3.us-east-1.amazonaws.com/uploads/")));
     }
 
     private void signUp(String loginId, String password) throws Exception {

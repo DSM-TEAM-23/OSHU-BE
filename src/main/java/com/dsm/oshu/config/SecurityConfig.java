@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs.yaml", "/v3/api-docs/**", "/h2-console/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/stores/**", "/promotions/**", "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/stores/**", "/promotions/**").permitAll()
                         .requestMatchers("/owner/**").hasRole("OWNER")
                         .anyRequest().denyAll())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

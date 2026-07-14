@@ -9,14 +9,14 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       PUBLIC_DATA_SERVICE_KEY: ${PUBLIC_DATA_SERVICE_KEY:-}
       OSHU_JWT_SECRET: ${OSHU_JWT_SECRET:?Set OSHU_JWT_SECRET in .env}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET in .env}
       CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-https://oshu-fe.vercel.app}"
     depends_on:
       mysql:
         condition: service_healthy
     ports:
       - "8080:8080"
-    volumes:
-      - app-uploads:/app/uploads
     restart: unless-stopped
 
   mysql:
@@ -37,5 +37,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  app-uploads:
   mysql-data:
