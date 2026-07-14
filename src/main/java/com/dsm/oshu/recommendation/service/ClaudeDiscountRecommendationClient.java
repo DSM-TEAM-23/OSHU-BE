@@ -3,6 +3,7 @@ package com.dsm.oshu.recommendation.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +24,7 @@ public class ClaudeDiscountRecommendationClient {
     public ClaudeDiscountRecommendationClient(
             ObjectMapper objectMapper,
             @Value("${oshu.anthropic.api-key:}") String apiKey,
-            @Value("${oshu.anthropic.model:claude-3-5-haiku-20241022}") String model,
+            @Value("${oshu.anthropic.model:claude-haiku-4-5-20251001}") String model,
             @Value("${oshu.anthropic.base-url:https://api.anthropic.com/v1}") String baseUrl) {
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
@@ -66,11 +67,28 @@ public class ClaudeDiscountRecommendationClient {
             }
             return objectMapper.readValue(content, AiDiscountRecommendation.class);
         } catch (RestClientResponseException exception) {
-            throw new IllegalStateException(
-                    "AI 추천 서버 호출에 실패했습니다. 잠시 후 다시 시도해주세요. (" + exception.getStatusCode().value() + ")",
-                    exception);
+            throw new IllegalStateException(resolveAnthropicErrorMessage(exception), exception);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("AI 추천 응답 형식이 올바르지 않습니다. 잠시 후 다시 시도해주세요.", exception);
         }
+    }
+
+    private String resolveAnthropicErrorMessage(RestClientResponseException exception) {
+        String responseBody = exception.getResponseBodyAsString();
+        if (responseBody != null && !responseBody.isBlank()) {
+            try {
+                JsonNode errorNode = objectMapper.readTree(responseBody).path("error");
+                String type = errorNode.path("type").asText("");
+                String message = errorNode.path("message").asText("");
+                if ("not_found_error".equals(type)
+                        && message.toLowerCase(Locale.ROOT).contains("model")) {
+                    return "AI 추천 모델 설정이 올바르지 않습니다. 서버 모델명을 확인해주세요.";
+                }
+            } catch (JsonProcessingException ignored) {
+                // Fall back to the generic message below when the upstream body is not JSON.
+            }
+        }
+        return "AI 추천 서버 호출에 실패했습니다. 잠시 후 다시 시도해주세요. ("
+                + exception.getStatusCode().value() + ")";
     }
 }
