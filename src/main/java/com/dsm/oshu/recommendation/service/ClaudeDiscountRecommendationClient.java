@@ -65,7 +65,7 @@ public class ClaudeDiscountRecommendationClient {
             if (content == null || content.isBlank()) {
                 throw new IllegalStateException("AI 추천 결과를 받지 못했습니다. 잠시 후 다시 시도해주세요.");
             }
-            return objectMapper.readValue(content, AiDiscountRecommendation.class);
+            return objectMapper.readValue(extractJsonPayload(content), AiDiscountRecommendation.class);
         } catch (RestClientResponseException exception) {
             throw new IllegalStateException(resolveAnthropicErrorMessage(exception), exception);
         } catch (JsonProcessingException exception) {
@@ -94,5 +94,25 @@ public class ClaudeDiscountRecommendationClient {
 
     private String normalizeBaseUrl(String baseUrl) {
         return baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+    }
+
+    private String extractJsonPayload(String content) {
+        String trimmed = content.trim();
+        if (trimmed.startsWith("```")) {
+            int firstLineBreak = trimmed.indexOf('\n');
+            if (firstLineBreak >= 0) {
+                trimmed = trimmed.substring(firstLineBreak + 1);
+            }
+            if (trimmed.endsWith("```")) {
+                trimmed = trimmed.substring(0, trimmed.length() - 3).trim();
+            }
+        }
+
+        int jsonStart = trimmed.indexOf('{');
+        int jsonEnd = trimmed.lastIndexOf('}');
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            return trimmed.substring(jsonStart, jsonEnd + 1);
+        }
+        return trimmed;
     }
 }
