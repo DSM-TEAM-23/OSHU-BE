@@ -50,7 +50,7 @@ class OshuBeApplicationTests {
     @Test
     void ownerStoreCreationRequiresBearerToken() throws Exception {
         String payload = """
-                {"name":"테스트 가게","category":"카페","address":"유성구","latitude":36.36,"longitude":127.34}
+                {"name":"테스트 가게","category":"카페","address":"유성구"}
                 """;
         mockMvc.perform(post("/owner/stores").contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isForbidden());
@@ -90,14 +90,16 @@ class OshuBeApplicationTests {
         signUp("store-owner", "password123!");
         String accessToken = login("store-owner", "password123!");
         String payload = """
-                {"name":"테스트 카페","category":"카페","address":"유성구","latitude":36.36,"longitude":127.34}
+                {"name":"테스트 카페","category":"카페","address":"유성구"}
                 """;
         mockMvc.perform(post("/owner/stores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.category").value("카페"));
+                .andExpect(jsonPath("$.category").value("카페"))
+                .andExpect(jsonPath("$.latitude").value(36.3628))
+                .andExpect(jsonPath("$.longitude").value(127.3441));
     }
 
     private void signUp(String loginId, String password) throws Exception {

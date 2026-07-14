@@ -15,10 +15,6 @@ public record StoreCreateRequest(
         String description,
         @Schema(description = "가게 주소", example = "대전광역시 유성구 궁동 123")
         @NotBlank String address,
-        @Schema(description = "위도", example = "36.3622")
-        @NotNull Double latitude,
-        @Schema(description = "경도", example = "127.3449")
-        @NotNull Double longitude,
         @Schema(description = "가게 전화번호", example = "042-000-0001")
         String phone,
         @Schema(description = "가게 영업시간. 시작 시간과 마감 시간을 함께 입력합니다.", example = "09:00 - 21:00")

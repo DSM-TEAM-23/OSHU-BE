@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class OwnerStoreService {
+    private static final double DEFAULT_STORE_LATITUDE = 36.3628;
+    private static final double DEFAULT_STORE_LONGITUDE = 127.3441;
+
     private final StoreRepository stores;
     private final StoreReader storeReader;
     private final StoreDtoMapper storeDtoMapper;
@@ -40,8 +43,8 @@ public class OwnerStoreService {
                 request.category(),
                 request.description(),
                 request.address(),
-                request.latitude(),
-                request.longitude(),
+                DEFAULT_STORE_LATITUDE,
+                DEFAULT_STORE_LONGITUDE,
                 request.phone(),
                 request.openingHours(),
                 ownerLoginId));
