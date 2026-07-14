@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 @Component
 public class ClaudeDiscountRecommendationClient {
@@ -50,23 +51,26 @@ public class ClaudeDiscountRecommendationClient {
                         "role", "user",
                         "content", "가게의 요일별 시간대 주문량 집계 데이터는 다음과 같다.\n" + statisticsJson)));
 
-        JsonNode response = restClient.post()
-                .uri("messages")
-                .header("x-api-key", apiKey)
-                .header("anthropic-version", ANTHROPIC_VERSION)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
-                .retrieve()
-                .body(JsonNode.class);
-
-        String content = response == null ? null : response.at("/content/0/text").asText(null);
-        if (content == null || content.isBlank()) {
-            throw new IllegalStateException("Claude 추천 응답을 받지 못했습니다.");
-        }
         try {
+            JsonNode response = restClient.post()
+                    .uri("/messages")
+                    .header("x-api-key", apiKey)
+                    .header("anthropic-version", ANTHROPIC_VERSION)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(JsonNode.class);
+            String content = response == null ? null : response.at("/content/0/text").asText(null);
+            if (content == null || content.isBlank()) {
+                throw new IllegalStateException("AI 추천 결과를 받지 못했습니다. 잠시 후 다시 시도해주세요.");
+            }
             return objectMapper.readValue(content, AiDiscountRecommendation.class);
+        } catch (RestClientResponseException exception) {
+            throw new IllegalStateException(
+                    "AI 추천 서버 호출에 실패했습니다. 잠시 후 다시 시도해주세요. (" + exception.getStatusCode().value() + ")",
+                    exception);
         } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("Claude 추천 응답 형식이 올바르지 않습니다.", exception);
+            throw new IllegalStateException("AI 추천 응답 형식이 올바르지 않습니다. 잠시 후 다시 시도해주세요.", exception);
         }
     }
 }
