@@ -29,7 +29,7 @@ public class ClaudeDiscountRecommendationClient {
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
         this.model = model;
-        this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+        this.restClient = RestClient.builder().baseUrl(normalizeBaseUrl(baseUrl)).build();
     }
 
     public AiDiscountRecommendation recommend(String statisticsJson) {
@@ -90,5 +90,9 @@ public class ClaudeDiscountRecommendationClient {
         }
         return "AI 추천 서버 호출에 실패했습니다. 잠시 후 다시 시도해주세요. ("
                 + exception.getStatusCode().value() + ")";
+    }
+
+    private String normalizeBaseUrl(String baseUrl) {
+        return baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
     }
 }
