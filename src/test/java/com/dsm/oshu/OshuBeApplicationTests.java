@@ -29,7 +29,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest(properties = {
         "spring.security.oauth2.client.registration.google.client-id=test-google-client.apps.googleusercontent.com",
@@ -45,6 +47,9 @@ class OshuBeApplicationTests {
 
     @MockBean
     private S3Client s3Client;
+
+    @MockBean
+    private com.dsm.oshu.recommendation.service.ClaudeDiscountRecommendationClient claudeDiscountRecommendationClient;
 
     @Autowired
     private com.dsm.oshu.auth.service.AuthService authService;
@@ -211,6 +216,48 @@ class OshuBeApplicationTests {
                 .getQueryParams()
                 .getFirst("redirect_uri");
         assertEquals("https://api.oshu.example/login/oauth2/code/google", callbackUri);
+    }
+
+    @Test
+    void ownerCanReceiveAiDiscountRecommendationFromDailyOrderStatistics() throws Exception {
+        signUp("recommendation-owner", "password123!");
+        String accessToken = login("recommendation-owner", "password123!");
+        MvcResult storeResult = mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"추천 테스트 가게","category":"카페","address":"유성구"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long storeId = objectMapper.readTree(storeResult.getResponse().getContentAsString()).get("storeId").asLong();
+        String orderDate = java.time.LocalDate.now().minusDays(1).toString();
+
+        mockMvc.perform(post("/owner/stores/" + storeId + "/order-statistics")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"orderDate":"%s","hourlyOrderCounts":[
+                                  {"hour":12,"orderCount":12},
+                                  {"hour":15,"orderCount":1},
+                                  {"hour":16,"orderCount":0}
+                                ]}
+                                """.formatted(orderDate)))
+                .andExpect(status().isNoContent());
+
+        when(claudeDiscountRecommendationClient.recommend(anyString()))
+                .thenReturn(new com.dsm.oshu.recommendation.service.AiDiscountRecommendation(
+                        "화요일", 15, 17, 15, "분석된 주문 데이터에서 15~17시 주문량이 가장 낮습니다."));
+
+        mockMvc.perform(get("/owner/stores/" + storeId + "/discount-recommendations")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recommendedDay").value("화요일"))
+                .andExpect(jsonPath("$.startHour").value(15))
+                .andExpect(jsonPath("$.endHour").value(17))
+                .andExpect(jsonPath("$.discountRate").value(15));
+
+        verify(claudeDiscountRecommendationClient).recommend(anyString());
     }
 
     @Test

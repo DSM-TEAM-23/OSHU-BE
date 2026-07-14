@@ -58,7 +58,7 @@ public class GoogleOAuthSuccessHandler implements AuthenticationSuccessHandler {
             response.sendRedirect(redirectUri);
         } catch (RuntimeException exception) {
             log.error("Google OAuth callback failed while creating a login code", exception);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Google 로그인 처리에 실패했습니다.!");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Google 로그인 처리에 실패했습니다.");
         }
     }
 }

@@ -48,6 +48,22 @@ export OSHU_JWT_SECRET='충분히_긴_JWT_서명_시크릿'
 
 클라이언트는 `GET /oauth2/authorization/google`로 **페이지 이동**을 시작해야 합니다. `fetch`나 Axios 호출로 시작하면 최종 `oshu://` 딥링크를 앱으로 열 수 없습니다. Google Cloud Console의 승인된 리디렉션 URI에는 배포 API의 `https://<api-domain>/login/oauth2/code/google`을 등록하세요. `GOOGLE_REDIRECT_URI`를 비워 두면 요청의 공개 도메인으로 이 주소를 자동 생성합니다.
 
+## Claude 할인 시간대 추천
+
+점주는 하루 단위로 시간대별 주문 건수를 저장하고, 추천 API를 호출해 최근 4주 데이터 기준의 할인 시간·할인율·설명을 받습니다. `ANTHROPIC_API_KEY`는 서버 환경변수에만 설정합니다.
+
+```http
+POST /owner/stores/{storeId}/order-statistics
+Authorization: Bearer {accessToken}
+
+{"orderDate":"2026-07-15","hourlyOrderCounts":[{"hour":12,"orderCount":8},{"hour":15,"orderCount":1}]}
+```
+
+```http
+GET /owner/stores/{storeId}/discount-recommendations
+Authorization: Bearer {accessToken}
+```
+
 ## 검증
 
 ```bash

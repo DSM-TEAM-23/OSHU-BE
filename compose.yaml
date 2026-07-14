@@ -13,6 +13,8 @@ services:
       GOOGLE_WEB_CLIENT_SECRET: ${GOOGLE_WEB_CLIENT_SECRET:-replace-with-google-client-secret}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-$${baseUrl}/login/oauth2/code/$${registrationId}}
       OSHU_MOBILE_CALLBACK_URI: ${OSHU_MOBILE_CALLBACK_URI:-oshu://auth/callback}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}
       AWS_REGION: ${AWS_REGION:-us-east-1}
       S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET in .env}
       CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-https://oshu-fe.vercel.app}"

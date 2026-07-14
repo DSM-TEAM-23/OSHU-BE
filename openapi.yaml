@@ -189,6 +189,52 @@ paths:
                 $ref: "#/components/schemas/TimeSaleResponse"
       security:
       - bearerAuth: []
+  /owner/stores/{storeId}/order-statistics:
+    post:
+      tags:
+      - Owner Discount Recommendations
+      summary: 하루 시간대별 주문량 저장
+      operationId: saveDailyOrderStatistics
+      parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyOrderStatisticsRequest"
+      responses:
+        "204":
+          description: No Content
+      security:
+      - bearerAuth: []
+  /owner/stores/{storeId}/discount-recommendations:
+    get:
+      tags:
+      - Owner Discount Recommendations
+      summary: Claude 할인 시간대 추천
+      operationId: getDiscountRecommendation
+      parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscountRecommendationResponse"
+      security:
+      - bearerAuth: []
   /owner/stores/{storeId}/promotions:
     post:
       tags:
@@ -877,6 +923,65 @@ components:
           format: date-time
         notice:
           type: string
+    DailyOrderStatisticsRequest:
+      required:
+      - orderDate
+      - hourlyOrderCounts
+      type: object
+      properties:
+        orderDate:
+          type: string
+          format: date
+        hourlyOrderCounts:
+          type: array
+          maxItems: 24
+          items:
+            $ref: "#/components/schemas/HourlyOrderCountRequest"
+    HourlyOrderCountRequest:
+      required:
+      - hour
+      - orderCount
+      type: object
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        orderCount:
+          type: integer
+          minimum: 0
+    DiscountRecommendationResponse:
+      required:
+      - recommendedDay
+      - startHour
+      - endHour
+      - discountRate
+      - reason
+      type: object
+      properties:
+        recommendedDay:
+          type: string
+          example: 화요일
+        startHour:
+          type: integer
+          example: 15
+        endHour:
+          type: integer
+          example: 17
+        discountRate:
+          type: integer
+          example: 15
+        reason:
+          type: string
+          example: 최근 4주 화요일 15~17시 평균 주문량이 가장 낮습니다.
+        analysisStartDate:
+          type: string
+          format: date
+        analysisEndDate:
+          type: string
+          format: date
+        analyzedDays:
+          type: integer
     PromotionRequest:
       required:
       - endAt

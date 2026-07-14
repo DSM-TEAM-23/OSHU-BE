@@ -43,6 +43,10 @@ oshu:
     access-token-expiration-seconds: "${OSHU_JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:43200}"
   google:
     mobile-callback-uri: "${OSHU_MOBILE_CALLBACK_URI:oshu://auth/callback}"
+  anthropic:
+    api-key: "${ANTHROPIC_API_KEY:}"
+    model: "${ANTHROPIC_MODEL:claude-3-5-haiku-20241022}"
+    base-url: "${ANTHROPIC_BASE_URL:https://api.anthropic.com/v1}"
   storage:
     region: "${AWS_REGION:us-east-1}"
     bucket: "${S3_BUCKET:oshu-media-zo23-452529558267}"
