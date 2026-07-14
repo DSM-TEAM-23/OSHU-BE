@@ -12,11 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Comparator;
-import java.util.IntSummaryStatistics;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -55,54 +51,42 @@ public class DiscountRecommendationService {
         }
     }
 
-    public DiscountRecommendationResponse recommend(String ownerLoginId, Long storeId) {
+    public DiscountRecommendationResponse recommend(String ownerLoginId, Long storeId, LocalDate orderDate) {
         storeReader.requireOwnedStore(ownerLoginId, storeId);
-        LocalDate endDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        LocalDate startDate = endDate.minusWeeks(4).plusDays(1);
-        List<HourlyOrderStatistic> statistics = hourlyOrderStatistics
-                .findByStoreIdAndOrderDateBetweenOrderByOrderDateAscHourAsc(storeId, startDate, endDate);
+        LocalDate analysisDate = orderDate == null ? LocalDate.now(ZoneId.of("Asia/Seoul")) : orderDate;
+        List<HourlyOrderStatistic> statistics = hourlyOrderStatistics.findByStoreIdAndOrderDateOrderByHourAsc(storeId,
+                analysisDate);
         if (statistics.isEmpty()) {
-            throw new IllegalArgumentException("최근 4주 주문 데이터가 없어 할인 시간대를 추천할 수 없습니다.");
+            throw new IllegalArgumentException("해당 날짜의 주문 데이터가 없어 할인 시간대를 추천할 수 없습니다.");
         }
 
-        LocalDate analysisStart = statistics.get(0).getOrderDate();
-        LocalDate analysisEnd = statistics.get(statistics.size() - 1).getOrderDate();
-        int analyzedDays = (int) statistics.stream().map(HourlyOrderStatistic::getOrderDate).distinct().count();
-        String analysisJson = createAnalysisJson(statistics, analysisStart, analysisEnd, analyzedDays);
+        String analysisJson = createAnalysisJson(statistics, analysisDate);
         AiDiscountRecommendation recommendation = claudeClient.recommend(analysisJson);
-        validateRecommendation(recommendation);
+        validateRecommendation(recommendation, analysisDate);
         return new DiscountRecommendationResponse(recommendation.recommendedDay(), recommendation.startHour(),
-                recommendation.endHour(), recommendation.discountRate(), recommendation.reason(), analysisStart,
-                analysisEnd, analyzedDays);
+                recommendation.endHour(), recommendation.discountRate(), recommendation.reason(), analysisDate,
+                statistics.size());
     }
 
-    private String createAnalysisJson(List<HourlyOrderStatistic> statistics, LocalDate startDate,
-                                      LocalDate endDate, int analyzedDays) {
-        Map<TimeBucket, IntSummaryStatistics> summaries = statistics.stream().collect(Collectors.groupingBy(
-                statistic -> new TimeBucket(statistic.getOrderDate().getDayOfWeek(), statistic.getHour()),
-                LinkedHashMap::new, Collectors.summarizingInt(HourlyOrderStatistic::getOrderCount)));
-        List<Map<String, Object>> hourlyAverages = summaries.entrySet().stream()
-                .sorted(Comparator.comparing((Map.Entry<TimeBucket, IntSummaryStatistics> entry) -> entry.getKey().day)
-                        .thenComparing(entry -> entry.getKey().hour))
-                .map(entry -> Map.<String, Object>of(
-                        "day", koreanDay(entry.getKey().day),
-                        "hour", entry.getKey().hour,
-                        "averageOrderCount", Math.round(entry.getValue().getAverage() * 100.0) / 100.0,
-                        "observations", entry.getValue().getCount()))
+    private String createAnalysisJson(List<HourlyOrderStatistic> statistics, LocalDate analysisDate) {
+        List<java.util.Map<String, Object>> hourlyOrderCounts = statistics.stream()
+                .map(statistic -> java.util.Map.<String, Object>of(
+                        "hour", statistic.getHour(),
+                        "orderCount", statistic.getOrderCount()))
                 .toList();
         try {
-            return objectMapper.writeValueAsString(Map.of(
-                    "analysisStartDate", startDate,
-                    "analysisEndDate", endDate,
-                    "analyzedDays", analyzedDays,
-                    "hourlyAverages", hourlyAverages));
+            return objectMapper.writeValueAsString(java.util.Map.of(
+                    "analysisDate", analysisDate,
+                    "analysisDay", koreanDay(analysisDate.getDayOfWeek()),
+                    "hourlyOrderCounts", hourlyOrderCounts));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("주문 통계를 분석할 수 없습니다.", exception);
         }
     }
 
-    private void validateRecommendation(AiDiscountRecommendation recommendation) {
-        if (recommendation.startHour() >= recommendation.endHour()) {
+    private void validateRecommendation(AiDiscountRecommendation recommendation, LocalDate analysisDate) {
+        if (recommendation.startHour() >= recommendation.endHour()
+                || !koreanDay(analysisDate.getDayOfWeek()).equals(recommendation.recommendedDay())) {
             throw new IllegalStateException("AI가 유효하지 않은 할인 시간대를 반환했습니다.");
         }
     }
@@ -119,6 +103,4 @@ public class DiscountRecommendationService {
         };
     }
 
-    private record TimeBucket(DayOfWeek day, int hour) {
-    }
 }

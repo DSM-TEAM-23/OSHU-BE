@@ -50,7 +50,7 @@ export OSHU_JWT_SECRET='충분히_긴_JWT_서명_시크릿'
 
 ## Claude 할인 시간대 추천
 
-점주는 하루 단위로 시간대별 주문 건수를 저장하고, 추천 API를 호출해 최근 4주 데이터 기준의 할인 시간·할인율·설명을 받습니다. `ANTHROPIC_API_KEY`는 서버 환경변수에만 설정합니다.
+점주는 하루 단위로 시간대별 주문 건수를 저장하고, 해당 하루 데이터 기준의 할인 시간·할인율·설명을 받습니다. `ANTHROPIC_API_KEY`는 서버 환경변수에만 설정합니다.
 
 ```http
 POST /owner/stores/{storeId}/order-statistics
@@ -60,9 +60,11 @@ Authorization: Bearer {accessToken}
 ```
 
 ```http
-GET /owner/stores/{storeId}/discount-recommendations
+GET /owner/stores/{storeId}/discount-recommendations?orderDate=2026-07-15
 Authorization: Bearer {accessToken}
 ```
+
+`orderDate`를 생략하면 오늘(한국 시간) 데이터를 분석합니다.
 
 ## 검증
 

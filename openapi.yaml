@@ -217,7 +217,7 @@ paths:
     get:
       tags:
       - Owner Discount Recommendations
-      summary: Claude 할인 시간대 추천
+      summary: Claude 하루 할인 시간대 추천
       operationId: getDiscountRecommendation
       parameters:
       - name: storeId
@@ -226,6 +226,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - name: orderDate
+        in: query
+        required: false
+        description: 분석할 날짜. 생략하면 오늘(한국 시간) 데이터를 사용합니다.
+        schema:
+          type: string
+          format: date
       responses:
         "200":
           description: OK
@@ -973,14 +980,11 @@ components:
           example: 15
         reason:
           type: string
-          example: 최근 4주 화요일 15~17시 평균 주문량이 가장 낮습니다.
-        analysisStartDate:
+          example: 오늘 15~17시 주문량이 가장 낮아 할인 운영을 추천합니다.
+        analysisDate:
           type: string
           format: date
-        analysisEndDate:
-          type: string
-          format: date
-        analyzedDays:
+        analyzedHours:
           type: integer
     PromotionRequest:
       required:

@@ -8,8 +8,7 @@ public record DiscountRecommendationResponse(
         int endHour,
         int discountRate,
         String reason,
-        LocalDate analysisStartDate,
-        LocalDate analysisEndDate,
-        int analyzedDays
+        LocalDate analysisDate,
+        int analyzedHours
 ) {
 }

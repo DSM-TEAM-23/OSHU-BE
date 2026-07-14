@@ -38,8 +38,8 @@ public class ClaudeDiscountRecommendationClient {
         }
 
         String systemPrompt = "너는 소상공인 할인 시간대 분석가다. 제공된 집계 데이터만 사용한다. "
-                + "주문 평균이 낮은 요일과 시간대를 골라 1~2시간 할인과 5~50% 할인율을 추천한다. "
-                + "분석 기간이 4주보다 짧으면 reason에 데이터 기간이 짧다는 점을 한국어로 명시한다. "
+                + "하루의 시간대별 주문량 중 가장 낮은 시간대를 골라 1~2시간 할인과 5~50% 할인율을 추천한다. "
+                + "recommendedDay는 입력의 analysisDay와 동일하게 반환한다. "
                 + "반드시 아래 JSON 객체만 반환하고 Markdown 코드 블록은 사용하지 마라. "
                 + "{\"recommendedDay\":\"월요일|화요일|수요일|목요일|금요일|토요일|일요일\","
                 + "\"startHour\":0~23 정수,\"endHour\":1~24 정수,\"discountRate\":5~50 정수,"

@@ -8,6 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface HourlyOrderStatisticRepository extends JpaRepository<HourlyOrderStatistic, Long> {
     Optional<HourlyOrderStatistic> findByStoreIdAndOrderDateAndHour(Long storeId, LocalDate orderDate, int hour);
 
-    List<HourlyOrderStatistic> findByStoreIdAndOrderDateBetweenOrderByOrderDateAscHourAsc(
-            Long storeId, LocalDate startDate, LocalDate endDate);
+    List<HourlyOrderStatistic> findByStoreIdAndOrderDateOrderByHourAsc(Long storeId, LocalDate orderDate);
 }

@@ -231,7 +231,7 @@ class OshuBeApplicationTests {
                 .andExpect(status().isCreated())
                 .andReturn();
         long storeId = objectMapper.readTree(storeResult.getResponse().getContentAsString()).get("storeId").asLong();
-        String orderDate = java.time.LocalDate.now().minusDays(1).toString();
+        String orderDate = "2026-07-14";
 
         mockMvc.perform(post("/owner/stores/" + storeId + "/order-statistics")
                         .header("Authorization", "Bearer " + accessToken)
@@ -250,6 +250,7 @@ class OshuBeApplicationTests {
                         "화요일", 15, 17, 15, "분석된 주문 데이터에서 15~17시 주문량이 가장 낮습니다."));
 
         mockMvc.perform(get("/owner/stores/" + storeId + "/discount-recommendations")
+                        .param("orderDate", orderDate)
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.recommendedDay").value("화요일"))
