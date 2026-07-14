@@ -49,3 +49,16 @@ export OSHU_OWNER_TOKEN='점주용_개발_토큰'
 ```bash
 ./gradlew test
 ```
+
+## Docker 배포
+
+Docker Compose는 애플리케이션과 MySQL을 함께 실행합니다. MySQL 데이터는 `mysql-data` 볼륨에 유지됩니다.
+
+```bash
+cp .env.example .env
+# .env에서 MYSQL_PASSWORD, MYSQL_ROOT_PASSWORD, PUBLIC_DATA_SERVICE_KEY, OSHU_OWNER_TOKEN을 설정
+docker compose up -d --build
+docker compose logs -f app
+```
+
+실행 후 Swagger UI는 `http://서버_IP:8080/swagger-ui.html`에서 확인할 수 있습니다. 운영 환경에서는 Nginx와 HTTPS를 앞에 두고 8080 포트를 외부에 공개하지 않습니다.

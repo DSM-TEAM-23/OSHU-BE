@@ -1,0 +1,9 @@
+.git
+.gradle
+.idea
+.vscode
+.env
+build
+*.iml
+*.pem
+openapi.yaml
