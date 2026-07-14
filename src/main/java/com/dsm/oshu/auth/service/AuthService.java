@@ -31,13 +31,14 @@ public class AuthService {
         return new MessageResponse("회원가입이 완료되었습니다. 로그인 후 이용해주세요.");
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse login(LoginRequest request) {
         Account account = accounts.findByLoginId(request.loginId())
                 .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
         if (!passwordEncoder.matches(request.password(), account.getPassword())) {
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
+        account.ensureRole();
         return new TokenResponse(jwtTokenProvider.createAccessToken(account), "Bearer");
     }
 }

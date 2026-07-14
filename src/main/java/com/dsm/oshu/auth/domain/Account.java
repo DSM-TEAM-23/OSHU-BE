@@ -38,6 +38,14 @@ public class Account {
 
     @PrePersist
     void assignDefaultRole() {
+        ensureRole();
+    }
+
+    public boolean hasAssignedRole() {
+        return role != null;
+    }
+
+    public void ensureRole() {
         if (role == null) {
             role = AccountRole.OWNER;
         }
