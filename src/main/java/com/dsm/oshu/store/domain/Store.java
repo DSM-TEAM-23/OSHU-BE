@@ -62,12 +62,15 @@ public class Store {
         this.openingHours = openingHours; this.ownerLoginId = ownerLoginId;
     }
 
-    public void update(String name, Category category, String customCategory, String description, String address, String phone, String openingHours) {
+    public void update(String name, Category category, String customCategory, String description, String address,
+                       Double latitude, Double longitude, String phone, String openingHours) {
         if (name != null) this.name = name;
         if (category != null) this.category = category;
         this.customCategory = category == Category.OTHER ? customCategory : null;
         if (description != null) this.description = description;
         if (address != null) this.address = address;
+        if (latitude != null) this.latitude = latitude;
+        if (longitude != null) this.longitude = longitude;
         if (phone != null) this.phone = phone;
         if (openingHours != null) this.openingHours = openingHours;
     }

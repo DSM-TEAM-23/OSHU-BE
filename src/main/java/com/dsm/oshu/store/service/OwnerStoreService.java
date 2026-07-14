@@ -17,9 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class OwnerStoreService {
-    private static final double DEFAULT_STORE_LATITUDE = 36.3628;
-    private static final double DEFAULT_STORE_LONGITUDE = 127.3441;
-
     private final StoreRepository stores;
     private final StoreReader storeReader;
     private final StoreDtoMapper storeDtoMapper;
@@ -44,8 +41,8 @@ public class OwnerStoreService {
                 request.customCategory(),
                 request.description(),
                 request.address(),
-                DEFAULT_STORE_LATITUDE,
-                DEFAULT_STORE_LONGITUDE,
+                request.latitude(),
+                request.longitude(),
                 request.phone(),
                 request.openingHours(),
                 ownerLoginId));
@@ -58,6 +55,7 @@ public class OwnerStoreService {
 
     @Transactional
     public StoreDetailResponse updateStore(String ownerLoginId, Long storeId, StoreUpdateRequest request) {
+        validateCoordinatePair(request.latitude(), request.longitude());
         Store store = storeReader.requireOwnedStore(ownerLoginId, storeId);
         store.update(
                 request.name(),
@@ -65,9 +63,17 @@ public class OwnerStoreService {
                 request.customCategory(),
                 request.description(),
                 request.address(),
+                request.latitude(),
+                request.longitude(),
                 request.phone(),
                 request.openingHours());
         return storeDtoMapper.toDetail(store);
+    }
+
+    private void validateCoordinatePair(Double latitude, Double longitude) {
+        if ((latitude == null) != (longitude == null)) {
+            throw new IllegalArgumentException("위도와 경도는 함께 입력해야 합니다.");
+        }
     }
 
     @Transactional

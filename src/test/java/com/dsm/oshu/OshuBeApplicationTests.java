@@ -71,7 +71,7 @@ class OshuBeApplicationTests {
     @Test
     void ownerStoreCreationRequiresBearerToken() throws Exception {
         String payload = """
-                {"name":"테스트 가게","category":"카페","address":"유성구"}
+                {"name":"테스트 가게","category":"카페","address":"유성구","latitude":36.3628,"longitude":127.3441}
                 """;
         mockMvc.perform(post("/owner/stores").contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isForbidden());
@@ -111,7 +111,7 @@ class OshuBeApplicationTests {
         signUp("store-owner", "password123!");
         String accessToken = login("store-owner", "password123!");
         String payload = """
-                {"name":"테스트 카페","category":"카페","address":"유성구"}
+                {"name":"테스트 카페","category":"카페","address":"유성구","latitude":36.3628,"longitude":127.3441}
                 """;
         mockMvc.perform(post("/owner/stores")
                         .header("Authorization", "Bearer " + accessToken)
@@ -128,7 +128,7 @@ class OshuBeApplicationTests {
         signUp("custom-owner", "password123!");
         String accessToken = login("custom-owner", "password123!");
         String payload = """
-                {"name":"테스트 꽃집","category":"기타","customCategory":"꽃집","address":"유성구"}
+                {"name":"테스트 꽃집","category":"기타","customCategory":"꽃집","address":"유성구","latitude":36.3628,"longitude":127.3441}
                 """;
         mockMvc.perform(post("/owner/stores")
                         .header("Authorization", "Bearer " + accessToken)
@@ -143,7 +143,7 @@ class OshuBeApplicationTests {
         signUp("inquiry-owner", "password123!");
         String accessToken = login("inquiry-owner", "password123!");
         String storePayload = """
-                {"name":"문의 테스트 가게","category":"카페","address":"유성구"}
+                {"name":"문의 테스트 가게","category":"카페","address":"유성구","latitude":36.3628,"longitude":127.3441}
                 """;
         MvcResult storeResult = mockMvc.perform(post("/owner/stores")
                         .header("Authorization", "Bearer " + accessToken)
@@ -169,6 +169,29 @@ class OshuBeApplicationTests {
                 .andExpect(jsonPath("$[0].title").value("단체 예약 문의"))
                 .andExpect(jsonPath("$[0].name").value("김유저"))
                 .andExpect(jsonPath("$[0].number").value("010-1234-5678"));
+    }
+
+    @Test
+    void registeredStoreAppearsOnMapAtItsCoordinates() throws Exception {
+        signUp("map-owner", "password123!");
+        String accessToken = login("map-owner", "password123!");
+
+        mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"지도 좌표 테스트 가게","category":"카페","address":"서울","latitude":37.5001,"longitude":127.0001}
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/stores/map")
+                        .param("latitude", "37.5001")
+                        .param("longitude", "127.0001")
+                        .param("radius", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("지도 좌표 테스트 가게"))
+                .andExpect(jsonPath("$[0].externalData").value(false));
     }
 
     @Test
