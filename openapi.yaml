@@ -255,18 +255,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/TokenResponse"
-  /auth/google:
+  /oauth2/authorization/google:
+    get:
+      tags:
+      - Auth
+      summary: Google 로그인 페이지로 이동
+      operationId: startGoogleLogin
+      responses:
+        "302":
+          description: Google 로그인 페이지로 이동
+  /auth/google/exchange:
     post:
       tags:
       - Auth
-      summary: Google ID 토큰 로그인
-      operationId: googleLogin
+      summary: Google 로그인 코드 교환
+      operationId: exchangeGoogleLoginCode
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GoogleLoginRequest"
+              $ref: "#/components/schemas/GoogleCodeExchangeRequest"
       responses:
         "200":
           description: OK
@@ -915,12 +924,12 @@ components:
           type: string
         password:
           type: string
-    GoogleLoginRequest:
+    GoogleCodeExchangeRequest:
       required:
-      - idToken
+      - code
       type: object
       properties:
-        idToken:
+        code:
           type: string
     TokenResponse:
       type: object

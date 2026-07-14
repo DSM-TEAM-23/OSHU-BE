@@ -1,6 +1,18 @@
 spring:
   application:
     name: "OSHU API"
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: "${GOOGLE_WEB_CLIENT_ID:replace-with-google-client-id.apps.googleusercontent.com}"
+            client-secret: "${GOOGLE_WEB_CLIENT_SECRET:replace-with-google-client-secret}"
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}"
   datasource:
     url: "${DB_URL:jdbc:h2:mem:oshu;MODE=MySQL;DB_CLOSE_DELAY=-1}"
     username: "${DB_USERNAME:sa}"
@@ -22,7 +34,7 @@ oshu:
     secret: "${OSHU_JWT_SECRET:oshu-dev-jwt-secret-key-that-should-be-overridden}"
     access-token-expiration-seconds: "${OSHU_JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:43200}"
   google:
-    web-client-id: "${GOOGLE_WEB_CLIENT_ID:}"
+    mobile-callback-uri: "${OSHU_MOBILE_CALLBACK_URI:oshu://auth/callback}"
   storage:
     region: "${AWS_REGION:us-east-1}"
     bucket: "${S3_BUCKET:oshu-media-zo23-452529558267}"

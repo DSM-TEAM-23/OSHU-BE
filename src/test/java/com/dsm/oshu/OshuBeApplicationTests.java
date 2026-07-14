@@ -17,8 +17,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.MockMvc;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -31,7 +29,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest(properties = "oshu.google.web-client-id=test-google-client.apps.googleusercontent.com")
+@SpringBootTest(properties = {
+        "spring.security.oauth2.client.registration.google.client-id=test-google-client.apps.googleusercontent.com",
+        "spring.security.oauth2.client.registration.google.client-secret=test-google-client-secret"
+})
 @AutoConfigureMockMvc
 class OshuBeApplicationTests {
     @Autowired
@@ -43,8 +44,8 @@ class OshuBeApplicationTests {
     @MockBean
     private S3Client s3Client;
 
-    @MockBean(name = "googleIdTokenDecoder")
-    private JwtDecoder googleIdTokenDecoder;
+    @Autowired
+    private com.dsm.oshu.auth.service.AuthService authService;
 
     @Test
     void contextLoads() {
@@ -171,32 +172,32 @@ class OshuBeApplicationTests {
     }
 
     @Test
-    void googleLoginVerifiesTokenAndReturnsOshuJwt() throws Exception {
-        Jwt googleIdToken = Jwt.withTokenValue("google-id-token")
-                .header("alg", "RS256")
-                .subject("google-subject-123")
-                .claim("email", "google-user@example.com")
-                .claim("email_verified", true)
-                .issuedAt(java.time.Instant.now())
-                .expiresAt(java.time.Instant.now().plusSeconds(3600))
-                .build();
-        when(googleIdTokenDecoder.decode("google-id-token")).thenReturn(googleIdToken);
+    void googleLoginCodeCanBeExchangedOnlyOnce() throws Exception {
+        String code = authService.createGoogleLoginCode("google-subject-123", "google-user@example.com");
 
-        mockMvc.perform(post("/auth/google")
+        mockMvc.perform(post("/auth/google/exchange")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"idToken":"google-id-token"}
-                                """))
+                                {"code":"%s"}
+                                """.formatted(code)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isString())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"));
 
-        mockMvc.perform(post("/auth/google")
+        mockMvc.perform(post("/auth/google/exchange")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"idToken":"google-id-token"}
-                                """))
-                .andExpect(status().isOk());
+                                {"code":"%s"}
+                                """.formatted(code)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void googleLoginStartRedirectsToGoogleAuthorizationPage() throws Exception {
+        mockMvc.perform(get("/oauth2/authorization/google"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith(
+                        "https://accounts.google.com/o/oauth2/v2/auth")));
     }
 
     @Test

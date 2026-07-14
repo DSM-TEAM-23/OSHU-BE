@@ -1,6 +1,7 @@
 package com.dsm.oshu.config;
 
 import com.dsm.oshu.auth.service.JwtTokenProvider;
+import com.dsm.oshu.auth.service.GoogleOAuthSuccessHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -32,13 +34,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter,
+                                            GoogleOAuthSuccessHandler googleOAuthSuccessHandler) throws Exception {
         return http.cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs.yaml", "/v3/api-docs/**", "/h2-console/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/stores/**", "/promotions/**", "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/inquiry/store/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/inquiry/**").hasRole("OWNER")
@@ -47,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers("/owner/**").hasRole("OWNER")
                         .anyRequest().denyAll())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(new Http403ForbiddenEntryPoint()))
+                .oauth2Login(oauth2 -> oauth2.successHandler(googleOAuthSuccessHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

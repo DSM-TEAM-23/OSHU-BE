@@ -1,12 +1,17 @@
 package com.dsm.oshu.auth.service;
 
 import com.dsm.oshu.auth.presentation.dto.LoginRequest;
-import com.dsm.oshu.auth.presentation.dto.GoogleLoginRequest;
+import com.dsm.oshu.auth.presentation.dto.GoogleCodeExchangeRequest;
 import com.dsm.oshu.auth.presentation.dto.MessageResponse;
 import com.dsm.oshu.auth.presentation.dto.SignUpRequest;
 import com.dsm.oshu.auth.presentation.dto.TokenResponse;
 import com.dsm.oshu.auth.domain.Account;
 import com.dsm.oshu.auth.domain.AccountRepository;
+import com.dsm.oshu.auth.domain.GoogleLoginCode;
+import com.dsm.oshu.auth.domain.GoogleLoginCodeRepository;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Base64;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,14 +21,15 @@ public class AuthService {
     private final AccountRepository accounts;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final GoogleLoginCodeRepository googleLoginCodes;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthService(AccountRepository accounts, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider,
-                       GoogleIdTokenVerifier googleIdTokenVerifier) {
+                       GoogleLoginCodeRepository googleLoginCodes) {
         this.accounts = accounts;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.googleIdTokenVerifier = googleIdTokenVerifier;
+        this.googleLoginCodes = googleLoginCodes;
     }
 
     @Transactional
@@ -47,15 +53,35 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenResponse googleLogin(GoogleLoginRequest request) {
-        GoogleIdTokenVerifier.GoogleAccount googleAccount = googleIdTokenVerifier.verify(request.idToken());
-        Account account = accounts.findByGoogleSubject(googleAccount.subject())
+    public String createGoogleLoginCode(String googleSubject, String email) {
+        Account account = accounts.findByGoogleSubject(googleSubject)
                 .orElseGet(() -> accounts.save(Account.googleAccount(
-                        googleAccount.subject(),
-                        googleAccount.email(),
+                        googleSubject,
+                        email,
                         passwordEncoder.encode(java.util.UUID.randomUUID().toString())
                 )));
+        googleLoginCodes.deleteByExpiresAtBefore(LocalDateTime.now());
+        String code = createSecureCode();
+        googleLoginCodes.save(new GoogleLoginCode(code, account.getLoginId(), LocalDateTime.now().plusMinutes(1)));
+        return code;
+    }
+
+    @Transactional
+    public TokenResponse exchangeGoogleLoginCode(GoogleCodeExchangeRequest request) {
+        GoogleLoginCode googleLoginCode = googleLoginCodes.findByCode(request.code())
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 로그인 코드입니다."));
+        if (googleLoginCodes.consume(request.code(), LocalDateTime.now()) != 1) {
+            throw new IllegalArgumentException("만료되었거나 이미 사용한 로그인 코드입니다.");
+        }
+        Account account = accounts.findByLoginId(googleLoginCode.getLoginId())
+                .orElseThrow(() -> new IllegalArgumentException("계정을 찾을 수 없습니다."));
         account.ensureRole();
         return new TokenResponse(jwtTokenProvider.createAccessToken(account), "Bearer");
+    }
+
+    private String createSecureCode() {
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }
