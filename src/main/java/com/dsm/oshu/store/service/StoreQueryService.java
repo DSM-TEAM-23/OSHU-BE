@@ -42,7 +42,7 @@ public class StoreQueryService {
     public PageResponse<StoreCardResponse> listStores(String keyword, String category, int page, int size) {
         List<StoreCardResponse> all = stores.findAll().stream()
                 .filter(store -> contains(store.getName(), keyword) || contains(store.getAddress(), keyword))
-                .filter(store -> category == null || category.isBlank() || store.getCategory().equalsIgnoreCase(category))
+                .filter(store -> category == null || category.isBlank() || store.getCategory().matches(category))
                 .map(storeDtoMapper::toCard)
                 .toList();
         return PageUtils.page(all, page, size);

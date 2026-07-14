@@ -1,5 +1,6 @@
 package com.dsm.oshu.store.presentation.dto;
 
+import com.dsm.oshu.store.domain.Category;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,8 +9,8 @@ import jakarta.validation.constraints.NotNull;
 public record StoreCreateRequest(
         @Schema(description = "가게 이름", example = "오슈 베이커리")
         @NotBlank String name,
-        @Schema(description = "가게 업종", example = "카페")
-        @NotBlank String category,
+        @Schema(description = "가게 업종", example = "카페", allowableValues = {"베이커리", "음식점", "카페", "마트", "시장", "식료품"})
+        @NotNull Category category,
         @Schema(description = "가게 소개", example = "갓 구운 빵과 커피를 판매합니다.")
         String description,
         @Schema(description = "가게 주소", example = "대전광역시 유성구 궁동 123")

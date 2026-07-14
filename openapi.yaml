@@ -561,6 +561,13 @@ components:
           type: string
           description: 가게 업종
           example: 카페
+          enum:
+          - 베이커리
+          - 음식점
+          - 카페
+          - 마트
+          - 시장
+          - 식료품
         description:
           type: string
           description: 가게 소개

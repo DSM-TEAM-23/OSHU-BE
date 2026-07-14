@@ -19,8 +19,9 @@ public class Store {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String category;
+    private Category category;
 
     @Column(length = 1000)
     private String description;
@@ -51,7 +52,7 @@ public class Store {
     protected Store() {
     }
 
-    public Store(String name, String category, String description, String address, Double latitude,
+    public Store(String name, Category category, String description, String address, Double latitude,
                  Double longitude, String phone, String openingHours, String ownerLoginId) {
         this.name = name; this.category = category; this.description = description; this.address = address;
         this.latitude = latitude; this.longitude = longitude; this.phone = phone;
@@ -71,7 +72,7 @@ public class Store {
 
     public Long getId() { return id; }
     public String getName() { return name; }
-    public String getCategory() { return category; }
+    public Category getCategory() { return category; }
     public String getDescription() { return description; }
     public String getAddress() { return address; }
     public Double getLatitude() { return latitude; }

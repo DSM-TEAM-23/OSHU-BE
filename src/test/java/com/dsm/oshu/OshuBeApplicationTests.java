@@ -37,4 +37,17 @@ class OshuBeApplicationTests {
         mockMvc.perform(post("/owner/stores").contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void ownerStoreCreationAcceptsKoreanCategory() throws Exception {
+        String payload = """
+                {"name":"테스트 카페","category":"카페","address":"유성구","latitude":36.36,"longitude":127.34}
+                """;
+        mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer oshu-owner-dev-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.category").value("카페"));
+    }
 }
