@@ -53,7 +53,7 @@ public class ClaudeDiscountRecommendationClient {
 
         try {
             JsonNode response = restClient.post()
-                    .uri("/messages")
+                    .uri("messages")
                     .header("x-api-key", apiKey)
                     .header("anthropic-version", ANTHROPIC_VERSION)
                     .contentType(MediaType.APPLICATION_JSON)
