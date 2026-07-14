@@ -8,9 +8,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -35,7 +37,8 @@ import static org.mockito.Mockito.verify;
 
 @SpringBootTest(properties = {
         "spring.security.oauth2.client.registration.google.client-id=test-google-client.apps.googleusercontent.com",
-        "spring.security.oauth2.client.registration.google.client-secret=test-google-client-secret"
+        "spring.security.oauth2.client.registration.google.client-secret=test-google-client-secret",
+        "oshu.public-data.service-key="
 })
 @AutoConfigureMockMvc
 class OshuBeApplicationTests {
@@ -63,6 +66,50 @@ class OshuBeApplicationTests {
         mockMvc.perform(get("/stores/map")
                         .param("latitude", "36.3622").param("longitude", "127.3449"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void mapStoresIncludesActiveTimeSaleScheduleAndDiscountRate() throws Exception {
+        signUp("map-time-sale-owner", "password123!");
+        String accessToken = login("map-time-sale-owner", "password123!");
+        MvcResult storeResult = mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"지도 할인 테스트","category":"카페","address":"유성구"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long storeId = objectMapper.readTree(storeResult.getResponse().getContentAsString()).get("storeId").asLong();
+        LocalDateTime now = LocalDateTime.now();
+
+        mockMvc.perform(post("/owner/stores/" + storeId + "/time-sales")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"productName":"할인 커피","originalPrice":5000,"salePrice":3500,
+                                "startAt":"%s","endAt":"%s"}
+                                """.formatted(now.minusMinutes(5), now.plusHours(1))))
+                .andExpect(status().isCreated());
+
+        MvcResult mapResult = mockMvc.perform(get("/stores/map")
+                        .param("latitude", "36.3628").param("longitude", "127.3441"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode mappedStores = objectMapper.readTree(mapResult.getResponse().getContentAsString());
+        JsonNode mappedStore = null;
+        for (JsonNode store : mappedStores) {
+            if (storeId == store.get("storeId").asLong()) {
+                mappedStore = store;
+                break;
+            }
+        }
+
+        assertNotNull(mappedStore);
+        assertEquals(true, mappedStore.get("timeSaleActive").asBoolean());
+        assertEquals(30, mappedStore.get("discountRate").asInt());
+        assertEquals(true, mappedStore.get("timeSaleStartAt").isTextual());
+        assertEquals(true, mappedStore.get("timeSaleEndAt").isTextual());
     }
 
     @Test

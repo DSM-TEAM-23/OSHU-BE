@@ -3,6 +3,7 @@ package com.dsm.oshu.store.service;
 import com.dsm.oshu.common.presentation.dto.PageResponse;
 import com.dsm.oshu.promotion.presentation.dto.PromotionResponse;
 import com.dsm.oshu.store.presentation.dto.CrowdStatusResponse;
+import com.dsm.oshu.store.presentation.dto.MapStoreResponse;
 import com.dsm.oshu.store.presentation.dto.StoreCardResponse;
 import com.dsm.oshu.store.presentation.dto.StoreDetailResponse;
 import com.dsm.oshu.store.service.DistanceCalculator;
@@ -52,19 +53,20 @@ public class StoreQueryService {
         return storeDtoMapper.toDetail(storeReader.requireStore(storeId));
     }
 
-    public List<StoreCardResponse> mapStores(double latitude, double longitude, int radius, boolean timeSaleOnly) {
+    public List<MapStoreResponse> mapStores(double latitude, double longitude, int radius, boolean timeSaleOnly) {
         List<PublicStore> publicStores = publicStoreDataClient.findStoresInRadius(latitude, longitude, radius);
         if (!publicStores.isEmpty()) {
             return publicStores.stream()
-                    .map(store -> new StoreCardResponse(null, store.name(), store.category(),
-                            store.address(), store.latitude(), store.longitude(), null, null, false, true))
+                    .map(store -> new MapStoreResponse(null, store.name(), store.category(),
+                            store.address(), store.latitude(), store.longitude(), null, null, false, true,
+                            null, null, null))
                     .toList();
         }
         return stores.findAll().stream()
                 .filter(store -> DistanceCalculator.distanceInMeters(
                         latitude, longitude, store.getLatitude(), store.getLongitude()) <= radius)
                 .filter(store -> !timeSaleOnly || storeDtoMapper.hasActiveTimeSale(store.getId()))
-                .map(storeDtoMapper::toCard)
+                .map(storeDtoMapper::toMap)
                 .toList();
     }
 

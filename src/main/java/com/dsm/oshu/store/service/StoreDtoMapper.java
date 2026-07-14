@@ -1,6 +1,7 @@
 package com.dsm.oshu.store.service;
 
 import com.dsm.oshu.store.presentation.dto.CrowdStatusResponse;
+import com.dsm.oshu.store.presentation.dto.MapStoreResponse;
 import com.dsm.oshu.store.presentation.dto.StoreCardResponse;
 import com.dsm.oshu.store.presentation.dto.StoreDetailResponse;
 import com.dsm.oshu.promotion.service.PromotionDtoMapper;
@@ -8,7 +9,9 @@ import com.dsm.oshu.timesale.service.TimeSaleDtoMapper;
 import com.dsm.oshu.promotion.domain.PromotionRepository;
 import com.dsm.oshu.store.domain.Store;
 import com.dsm.oshu.timesale.domain.TimeSaleRepository;
+import com.dsm.oshu.timesale.domain.TimeSale;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -60,6 +63,24 @@ public class StoreDtoMapper {
                         .toList());
     }
 
+    public MapStoreResponse toMap(Store store) {
+        TimeSale activeTimeSale = findActiveTimeSale(store.getId());
+        return new MapStoreResponse(
+                store.getId(),
+                store.getName(),
+                categoryLabel(store),
+                store.getAddress(),
+                store.getLatitude(),
+                store.getLongitude(),
+                store.getCrowdLevel().name(),
+                store.getOpeningHours(),
+                activeTimeSale != null,
+                false,
+                activeTimeSale == null ? null : activeTimeSale.getStartAt(),
+                activeTimeSale == null ? null : activeTimeSale.getEndAt(),
+                activeTimeSale == null ? null : discountRate(activeTimeSale));
+    }
+
     public CrowdStatusResponse toCrowd(Store store) {
         return new CrowdStatusResponse(
                 store.getCrowdLevel().name(),
@@ -68,11 +89,22 @@ public class StoreDtoMapper {
     }
 
     public boolean hasActiveTimeSale(Long storeId) {
+        return findActiveTimeSale(storeId) != null;
+    }
+
+    private TimeSale findActiveTimeSale(Long storeId) {
         LocalDateTime now = LocalDateTime.now();
         return timeSales.findByStoreId(storeId).stream()
-                .anyMatch(sale -> sale.getStatus().equals("SCHEDULED")
+                .filter(sale -> sale.getStatus().equals("SCHEDULED")
                         && !now.isBefore(sale.getStartAt())
-                        && !now.isAfter(sale.getEndAt()));
+                        && !now.isAfter(sale.getEndAt()))
+                .min(Comparator.comparing(TimeSale::getEndAt))
+                .orElse(null);
+    }
+
+    private int discountRate(TimeSale timeSale) {
+        return (int) Math.round((timeSale.getOriginalPrice() - timeSale.getSalePrice())
+                * 100.0 / timeSale.getOriginalPrice());
     }
 
     private String categoryLabel(Store store) {

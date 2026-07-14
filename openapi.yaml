@@ -670,7 +670,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/StoreCardResponse"
+                  $ref: "#/components/schemas/MapStoreResponse"
   /promotions:
     get:
       tags:
@@ -1121,6 +1121,47 @@ components:
           type: boolean
         externalData:
           type: boolean
+    MapStoreResponse:
+      type: object
+      properties:
+        storeId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        category:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        crowdLevel:
+          type: string
+        openingHours:
+          type: string
+        timeSaleActive:
+          type: boolean
+        externalData:
+          type: boolean
+        timeSaleStartAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 활성 타임세일 시작 시각
+        timeSaleEndAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 활성 타임세일 종료 시각
+        discountRate:
+          type: integer
+          format: int32
+          nullable: true
+          description: 활성 타임세일의 할인율(%)
     PageResponsePromotionResponse:
       type: object
       properties:

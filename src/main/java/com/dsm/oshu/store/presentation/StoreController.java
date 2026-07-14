@@ -4,6 +4,7 @@ import com.dsm.oshu.store.service.StoreQueryService;
 import com.dsm.oshu.common.presentation.dto.PageResponse;
 import com.dsm.oshu.promotion.presentation.dto.PromotionResponse;
 import com.dsm.oshu.store.presentation.dto.CrowdStatusResponse;
+import com.dsm.oshu.store.presentation.dto.MapStoreResponse;
 import com.dsm.oshu.store.presentation.dto.StoreCardResponse;
 import com.dsm.oshu.store.presentation.dto.StoreDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +31,7 @@ public class StoreController {
 
     @Operation(summary = "지도 메인", description = "공공데이터 키가 설정되면 반경 내 공공 상가 정보를 우선 반환합니다.")
     @GetMapping("/map")
-    public List<StoreCardResponse> map(@RequestParam double latitude, @RequestParam double longitude,
+    public List<MapStoreResponse> map(@RequestParam double latitude, @RequestParam double longitude,
             @RequestParam(defaultValue = "1500") int radius, @RequestParam(defaultValue = "false") boolean timeSaleOnly) {
         return storeQueryService.mapStores(latitude, longitude, radius, timeSaleOnly);
     }
