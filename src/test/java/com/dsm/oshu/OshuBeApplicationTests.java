@@ -273,7 +273,7 @@ class OshuBeApplicationTests {
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"추천 테스트 가게","category":"카페","address":"유성구"}
+                                {"name":"추천 테스트 가게","category":"카페","address":"유성구","openingHours":"09:00 - 21:00"}
                                 """))
                 .andExpect(status().isCreated())
                 .andReturn();
@@ -306,6 +306,33 @@ class OshuBeApplicationTests {
                 .andExpect(jsonPath("$.discountRate").value(15));
 
         verify(claudeDiscountRecommendationClient).recommend(anyString());
+    }
+
+    @Test
+    void orderStatisticsOutsideOpeningHoursAreRejected() throws Exception {
+        signUp("schedule-owner", "password123!");
+        String accessToken = login("schedule-owner", "password123!");
+        MvcResult storeResult = mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"운영시간 테스트 가게","category":"카페","address":"유성구","openingHours":"09:00 - 21:00"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long storeId = objectMapper.readTree(storeResult.getResponse().getContentAsString()).get("storeId").asLong();
+
+        mockMvc.perform(post("/owner/stores/" + storeId + "/order-statistics")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"orderDate":"2026-07-15","hourlyOrderCounts":[
+                                  {"hour":8,"orderCount":3},
+                                  {"hour":10,"orderCount":5}
+                                ]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("가게 운영시간에 해당하는 시간대만 주문 데이터를 저장할 수 있습니다."));
     }
 
     @Test

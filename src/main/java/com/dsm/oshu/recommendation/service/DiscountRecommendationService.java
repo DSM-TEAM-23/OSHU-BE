@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,10 +38,14 @@ public class DiscountRecommendationService {
     @Transactional
     public void saveDailyStatistics(String ownerLoginId, Long storeId, DailyOrderStatisticsRequest request) {
         Store store = storeReader.requireOwnedStore(ownerLoginId, storeId);
+        Set<Integer> operatingHours = resolveOperatingHours(store.getOpeningHours());
         Set<Integer> hours = request.hourlyOrderCounts().stream().map(HourlyOrderCountRequest::hour)
                 .collect(Collectors.toSet());
         if (hours.size() != request.hourlyOrderCounts().size()) {
             throw new IllegalArgumentException("같은 시간대의 주문량은 한 번만 전송할 수 있습니다.");
+        }
+        if (!operatingHours.containsAll(hours)) {
+            throw new IllegalArgumentException("가게 운영시간에 해당하는 시간대만 주문 데이터를 저장할 수 있습니다.");
         }
 
         for (HourlyOrderCountRequest hourlyCount : request.hourlyOrderCounts()) {
@@ -52,17 +57,20 @@ public class DiscountRecommendationService {
     }
 
     public DiscountRecommendationResponse recommend(String ownerLoginId, Long storeId, LocalDate orderDate) {
-        storeReader.requireOwnedStore(ownerLoginId, storeId);
+        Store store = storeReader.requireOwnedStore(ownerLoginId, storeId);
         LocalDate analysisDate = orderDate == null ? LocalDate.now(ZoneId.of("Asia/Seoul")) : orderDate;
+        Set<Integer> operatingHours = resolveOperatingHours(store.getOpeningHours());
         List<HourlyOrderStatistic> statistics = hourlyOrderStatistics.findByStoreIdAndOrderDateOrderByHourAsc(storeId,
-                analysisDate);
+                analysisDate).stream()
+                .filter(statistic -> operatingHours.contains(statistic.getHour()))
+                .toList();
         if (statistics.isEmpty()) {
             throw new IllegalArgumentException("해당 날짜의 주문 데이터가 없어 할인 시간대를 추천할 수 없습니다.");
         }
 
         String analysisJson = createAnalysisJson(statistics, analysisDate);
         AiDiscountRecommendation recommendation = claudeClient.recommend(analysisJson);
-        validateRecommendation(recommendation, analysisDate);
+        validateRecommendation(recommendation, analysisDate, operatingHours);
         return new DiscountRecommendationResponse(recommendation.recommendedDay(), recommendation.startHour(),
                 recommendation.endHour(), recommendation.discountRate(), recommendation.reason(), analysisDate,
                 statistics.size());
@@ -84,11 +92,71 @@ public class DiscountRecommendationService {
         }
     }
 
-    private void validateRecommendation(AiDiscountRecommendation recommendation, LocalDate analysisDate) {
+    private void validateRecommendation(AiDiscountRecommendation recommendation, LocalDate analysisDate,
+                                        Set<Integer> operatingHours) {
         if (recommendation.startHour() >= recommendation.endHour()
                 || !koreanDay(analysisDate.getDayOfWeek()).equals(recommendation.recommendedDay())) {
             throw new IllegalStateException("AI가 유효하지 않은 할인 시간대를 반환했습니다.");
         }
+        if (!isWithinOperatingHours(recommendation.startHour(), recommendation.endHour(), operatingHours)) {
+            throw new IllegalStateException("AI가 가게 운영시간을 벗어난 할인 시간대를 반환했습니다.");
+        }
+    }
+
+    private Set<Integer> resolveOperatingHours(String openingHours) {
+        String[] ranges = openingHours == null ? new String[0] : openingHours.split("-");
+        if (ranges.length != 2) {
+            return allHours();
+        }
+
+        Integer startHour = parseHour(ranges[0]);
+        Integer endHour = parseHour(ranges[1]);
+        if (startHour == null || endHour == null || startHour.equals(endHour)) {
+            return allHours();
+        }
+
+        LinkedHashSet<Integer> hours = new LinkedHashSet<>();
+        int hour = startHour;
+        do {
+            hours.add(hour);
+            hour = (hour + 1) % 24;
+        } while (hour != endHour);
+        return hours;
+    }
+
+    private Integer parseHour(String timeText) {
+        String[] pieces = timeText.trim().split(":");
+        if (pieces.length == 0) {
+            return null;
+        }
+        try {
+            int hour = Integer.parseInt(pieces[0]);
+            return hour >= 0 && hour <= 23 ? hour : null;
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private Set<Integer> allHours() {
+        return java.util.stream.IntStream.range(0, 24).boxed()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private boolean isWithinOperatingHours(int startHour, int endHour, Set<Integer> operatingHours) {
+        if (!operatingHours.contains(startHour)) {
+            return false;
+        }
+        int hour = startHour;
+        while (hour != endHour) {
+            if (!operatingHours.contains(hour)) {
+                return false;
+            }
+            hour = (hour + 1) % 24;
+            if (hour == startHour) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String koreanDay(DayOfWeek day) {
