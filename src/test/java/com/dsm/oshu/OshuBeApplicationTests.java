@@ -1,7 +1,9 @@
 package com.dsm.oshu;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -27,6 +29,16 @@ class OshuBeApplicationTests {
         mockMvc.perform(get("/stores/map")
                         .param("latitude", "36.3622").param("longitude", "127.3449"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void corsPreflightAllowsVercelFrontend() throws Exception {
+        String origin = "https://oshu-fe.vercel.app";
+        mockMvc.perform(options("/stores")
+                        .header("Origin", origin)
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", origin));
     }
 
     @Test
