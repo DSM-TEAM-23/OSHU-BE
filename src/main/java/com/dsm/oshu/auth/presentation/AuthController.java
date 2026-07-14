@@ -2,6 +2,7 @@ package com.dsm.oshu.auth.presentation;
 
 import com.dsm.oshu.auth.service.AuthService;
 import com.dsm.oshu.auth.presentation.dto.LoginRequest;
+import com.dsm.oshu.auth.presentation.dto.GoogleLoginRequest;
 import com.dsm.oshu.auth.presentation.dto.MessageResponse;
 import com.dsm.oshu.auth.presentation.dto.SignUpRequest;
 import com.dsm.oshu.auth.presentation.dto.TokenResponse;
@@ -29,4 +30,10 @@ public class AuthController {
     @Operation(summary = "로그인")
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) { return authApplicationService.login(request); }
+
+    @Operation(summary = "Google ID 토큰 로그인")
+    @PostMapping("/google")
+    public TokenResponse googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        return authApplicationService.googleLogin(request);
+    }
 }

@@ -21,6 +21,8 @@ oshu:
   jwt:
     secret: "${OSHU_JWT_SECRET:oshu-dev-jwt-secret-key-that-should-be-overridden}"
     access-token-expiration-seconds: "${OSHU_JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:43200}"
+  google:
+    web-client-id: "${GOOGLE_WEB_CLIENT_ID:}"
   storage:
     region: "${AWS_REGION:us-east-1}"
     bucket: "${S3_BUCKET:oshu-media-zo23-452529558267}"

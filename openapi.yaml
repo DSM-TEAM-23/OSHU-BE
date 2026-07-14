@@ -255,6 +255,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/TokenResponse"
+  /auth/google:
+    post:
+      tags:
+      - Auth
+      summary: Google ID 토큰 로그인
+      operationId: googleLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleLoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
   /owner/time-sales/{timeSaleId}:
     patch:
       tags:
@@ -895,6 +914,13 @@ components:
         loginId:
           type: string
         password:
+          type: string
+    GoogleLoginRequest:
+      required:
+      - idToken
+      type: object
+      properties:
+        idToken:
           type: string
     TokenResponse:
       type: object

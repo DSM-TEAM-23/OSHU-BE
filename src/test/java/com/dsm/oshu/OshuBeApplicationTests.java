@@ -17,6 +17,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.MockMvc;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -29,7 +31,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
+@SpringBootTest(properties = "oshu.google.web-client-id=test-google-client.apps.googleusercontent.com")
 @AutoConfigureMockMvc
 class OshuBeApplicationTests {
     @Autowired
@@ -40,6 +42,9 @@ class OshuBeApplicationTests {
 
     @MockBean
     private S3Client s3Client;
+
+    @MockBean(name = "googleIdTokenDecoder")
+    private JwtDecoder googleIdTokenDecoder;
 
     @Test
     void contextLoads() {
@@ -163,6 +168,35 @@ class OshuBeApplicationTests {
                 .andExpect(jsonPath("$[0].title").value("단체 예약 문의"))
                 .andExpect(jsonPath("$[0].name").value("김유저"))
                 .andExpect(jsonPath("$[0].number").value("010-1234-5678"));
+    }
+
+    @Test
+    void googleLoginVerifiesTokenAndReturnsOshuJwt() throws Exception {
+        Jwt googleIdToken = Jwt.withTokenValue("google-id-token")
+                .header("alg", "RS256")
+                .subject("google-subject-123")
+                .claim("email", "google-user@example.com")
+                .claim("email_verified", true)
+                .issuedAt(java.time.Instant.now())
+                .expiresAt(java.time.Instant.now().plusSeconds(3600))
+                .build();
+        when(googleIdTokenDecoder.decode("google-id-token")).thenReturn(googleIdToken);
+
+        mockMvc.perform(post("/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"idToken":"google-id-token"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isString())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"));
+
+        mockMvc.perform(post("/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"idToken":"google-id-token"}
+                                """))
+                .andExpect(status().isOk());
     }
 
     @Test

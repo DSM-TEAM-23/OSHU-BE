@@ -1,6 +1,7 @@
 package com.dsm.oshu.auth.service;
 
 import com.dsm.oshu.auth.presentation.dto.LoginRequest;
+import com.dsm.oshu.auth.presentation.dto.GoogleLoginRequest;
 import com.dsm.oshu.auth.presentation.dto.MessageResponse;
 import com.dsm.oshu.auth.presentation.dto.SignUpRequest;
 import com.dsm.oshu.auth.presentation.dto.TokenResponse;
@@ -15,11 +16,14 @@ public class AuthService {
     private final AccountRepository accounts;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
-    public AuthService(AccountRepository accounts, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
+    public AuthService(AccountRepository accounts, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider,
+                       GoogleIdTokenVerifier googleIdTokenVerifier) {
         this.accounts = accounts;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.googleIdTokenVerifier = googleIdTokenVerifier;
     }
 
     @Transactional
@@ -38,6 +42,19 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), account.getPassword())) {
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
+        account.ensureRole();
+        return new TokenResponse(jwtTokenProvider.createAccessToken(account), "Bearer");
+    }
+
+    @Transactional
+    public TokenResponse googleLogin(GoogleLoginRequest request) {
+        GoogleIdTokenVerifier.GoogleAccount googleAccount = googleIdTokenVerifier.verify(request.idToken());
+        Account account = accounts.findByGoogleSubject(googleAccount.subject())
+                .orElseGet(() -> accounts.save(Account.googleAccount(
+                        googleAccount.subject(),
+                        googleAccount.email(),
+                        passwordEncoder.encode(java.util.UUID.randomUUID().toString())
+                )));
         account.ensureRole();
         return new TokenResponse(jwtTokenProvider.createAccessToken(account), "Bearer");
     }
