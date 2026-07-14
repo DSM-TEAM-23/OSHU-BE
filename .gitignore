@@ -3,6 +3,7 @@
 build/
 .env
 *.pem
+uploads/
 !**/src/main/**/build/
 !**/src/test/**/build/
 

@@ -11,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -22,6 +23,10 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, Object>> validation(MethodArgumentNotValidException exception) {
         FieldError fieldError = exception.getBindingResult().getFieldError();
         return error(HttpStatus.BAD_REQUEST, fieldError == null ? "요청 값이 올바르지 않습니다." : fieldError.getField() + ": " + fieldError.getDefaultMessage());
+    }
+    @ExceptionHandler({IllegalStateException.class, MaxUploadSizeExceededException.class})
+    ResponseEntity<Map<String, Object>> serverOrUpload(RuntimeException exception) {
+        return error(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
     private ResponseEntity<Map<String, Object>> error(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(Map.of("message", message, "status", status.value(), "timestamp", LocalDateTime.now().toString()));

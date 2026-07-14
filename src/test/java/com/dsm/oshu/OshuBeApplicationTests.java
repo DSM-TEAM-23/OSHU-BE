@@ -1,6 +1,7 @@
 package com.dsm.oshu;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -115,6 +117,23 @@ class OshuBeApplicationTests {
                         .content(payload))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.category").value("꽃집"));
+    }
+
+    @Test
+    void ownerImageUploadReturnsPublicPath() throws Exception {
+        signUp("upload-owner", "password123!");
+        String accessToken = login("upload-owner", "password123!");
+        MockMultipartFile image = new MockMultipartFile(
+                "image",
+                "test.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "png".getBytes());
+
+        mockMvc.perform(multipart("/owner/uploads/images")
+                        .file(image)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.imageUrl").value(org.hamcrest.Matchers.startsWith("/uploads/")));
     }
 
     private void signUp(String loginId, String password) throws Exception {

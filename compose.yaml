@@ -15,6 +15,8 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+    volumes:
+      - app-uploads:/app/uploads
     restart: unless-stopped
 
   mysql:
@@ -35,4 +37,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  app-uploads:
   mysql-data:
