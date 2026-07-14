@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "tbl_posts")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Post {
+public class Inquiry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +27,7 @@ public class Post {
     private String number;
 
     @Builder
-    public Post(String title, String content, String name, String number){
+    public Inquiry(String title, String content, String name, String number){
         this.title = title;
         this.content = content;
         this.name = name;

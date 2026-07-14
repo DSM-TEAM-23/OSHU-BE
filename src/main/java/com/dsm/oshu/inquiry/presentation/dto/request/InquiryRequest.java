@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class PostRequest {
+public class InquiryRequest {
     private String title;
     private String content;
     private String name;
