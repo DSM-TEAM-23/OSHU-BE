@@ -12,12 +12,16 @@ import com.dsm.oshu.auth.domain.GoogleLoginCodeRepository;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
     private final AccountRepository accounts;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -63,19 +67,25 @@ public class AuthService {
         googleLoginCodes.deleteByExpiresAtBefore(LocalDateTime.now());
         String code = createSecureCode();
         googleLoginCodes.save(new GoogleLoginCode(code, account.getLoginId(), LocalDateTime.now().plusMinutes(1)));
+        log.info("Google OAuth login code issued");
         return code;
     }
 
     @Transactional
     public TokenResponse exchangeGoogleLoginCode(GoogleCodeExchangeRequest request) {
         GoogleLoginCode googleLoginCode = googleLoginCodes.findByCode(request.code())
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 로그인 코드입니다."));
+                .orElseThrow(() -> {
+                    log.warn("Google OAuth login code exchange failed: code not found");
+                    return new IllegalArgumentException("유효하지 않은 로그인 코드입니다.");
+                });
         if (googleLoginCodes.consume(request.code(), LocalDateTime.now()) != 1) {
+            log.warn("Google OAuth login code exchange failed: code expired or already used");
             throw new IllegalArgumentException("만료되었거나 이미 사용한 로그인 코드입니다.");
         }
         Account account = accounts.findByLoginId(googleLoginCode.getLoginId())
                 .orElseThrow(() -> new IllegalArgumentException("계정을 찾을 수 없습니다."));
         account.ensureRole();
+        log.info("Google OAuth login code exchanged for an OSHU access token");
         return new TokenResponse(jwtTokenProvider.createAccessToken(account), "Bearer");
     }
 

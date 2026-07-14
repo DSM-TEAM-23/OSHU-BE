@@ -2,6 +2,7 @@ package com.dsm.oshu.config;
 
 import com.dsm.oshu.auth.service.JwtTokenProvider;
 import com.dsm.oshu.auth.service.GoogleOAuthSuccessHandler;
+import com.dsm.oshu.auth.service.GoogleOAuthFailureHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +36,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter,
-                                            GoogleOAuthSuccessHandler googleOAuthSuccessHandler) throws Exception {
+                                            GoogleOAuthSuccessHandler googleOAuthSuccessHandler,
+                                            GoogleOAuthFailureHandler googleOAuthFailureHandler) throws Exception {
         return http.cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
@@ -52,7 +54,9 @@ public class SecurityConfig {
                         .anyRequest().denyAll())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(new Http403ForbiddenEntryPoint()))
-                .oauth2Login(oauth2 -> oauth2.successHandler(googleOAuthSuccessHandler))
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(googleOAuthSuccessHandler)
+                        .failureHandler(googleOAuthFailureHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
