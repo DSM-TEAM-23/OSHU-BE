@@ -57,7 +57,7 @@ public class OwnerStoreController {
     @Operation(summary = "내 가게 정보 수정", description = "openingHours에는 영업 시작·마감 시간을 `09:00 - 21:00` 형식으로 입력합니다.")
     @PatchMapping("/{storeId}")
     public StoreDetailResponse updateStore(@AuthenticationPrincipal String ownerLoginId, @PathVariable Long storeId,
-                                           @Valid @RequestBody StoreUpdateRequest request) {
+                                           @RequestBody StoreUpdateRequest request) {
         return ownerStoreService.updateStore(ownerLoginId, storeId, request);
     }
 

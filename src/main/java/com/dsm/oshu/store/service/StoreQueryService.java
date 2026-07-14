@@ -15,7 +15,6 @@ import com.dsm.oshu.store.domain.StoreRepository;
 import com.dsm.oshu.store.infrastructure.PublicStore;
 import com.dsm.oshu.store.infrastructure.PublicStoreDataClient;
 import java.util.List;
-import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,19 +53,18 @@ public class StoreQueryService {
     }
 
     public List<StoreCardResponse> mapStores(double latitude, double longitude, int radius, boolean timeSaleOnly) {
-        List<StoreCardResponse> registeredStores = stores.findAll().stream()
+        List<PublicStore> publicStores = publicStoreDataClient.findStoresInRadius(latitude, longitude, radius);
+        if (!publicStores.isEmpty()) {
+            return publicStores.stream()
+                    .map(store -> new StoreCardResponse(null, store.name(), store.category(),
+                            store.address(), store.latitude(), store.longitude(), null, null, false, true))
+                    .toList();
+        }
+        return stores.findAll().stream()
                 .filter(store -> DistanceCalculator.distanceInMeters(
                         latitude, longitude, store.getLatitude(), store.getLongitude()) <= radius)
                 .filter(store -> !timeSaleOnly || storeDtoMapper.hasActiveTimeSale(store.getId()))
                 .map(storeDtoMapper::toCard)
-                .toList();
-
-        List<PublicStore> publicStores = publicStoreDataClient.findStoresInRadius(latitude, longitude, radius);
-        Stream<StoreCardResponse> publicStoreResponses = timeSaleOnly ? Stream.empty() : publicStores.stream()
-                .map(store -> new StoreCardResponse(null, store.name(), store.category(),
-                        store.address(), store.latitude(), store.longitude(), null, null, false, true));
-
-        return Stream.concat(registeredStores.stream(), publicStoreResponses)
                 .toList();
     }
 
