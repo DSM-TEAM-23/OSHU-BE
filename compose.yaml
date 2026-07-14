@@ -11,7 +11,7 @@ services:
       OSHU_JWT_SECRET: ${OSHU_JWT_SECRET:?Set OSHU_JWT_SECRET in .env}
       GOOGLE_WEB_CLIENT_ID: ${GOOGLE_WEB_CLIENT_ID:-replace-with-google-client-id.apps.googleusercontent.com}
       GOOGLE_WEB_CLIENT_SECRET: ${GOOGLE_WEB_CLIENT_SECRET:-replace-with-google-client-secret}
-      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/login/oauth2/code/google}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-$${baseUrl}/login/oauth2/code/$${registrationId}}
       OSHU_MOBILE_CALLBACK_URI: ${OSHU_MOBILE_CALLBACK_URI:-oshu://auth/callback}
       AWS_REGION: ${AWS_REGION:-us-east-1}
       S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET in .env}

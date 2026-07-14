@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +26,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -194,10 +196,21 @@ class OshuBeApplicationTests {
 
     @Test
     void googleLoginStartRedirectsToGoogleAuthorizationPage() throws Exception {
-        mockMvc.perform(get("/oauth2/authorization/google"))
+        MvcResult result = mockMvc.perform(get("/oauth2/authorization/google")
+                        .secure(true)
+                        .header("Host", "api.oshu.example")
+                        .header("X-Forwarded-Proto", "https"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith(
-                        "https://accounts.google.com/o/oauth2/v2/auth")));
+                        "https://accounts.google.com/o/oauth2/v2/auth")))
+                .andReturn();
+
+        String googleAuthorizationUri = result.getResponse().getHeader("Location");
+        String callbackUri = UriComponentsBuilder.fromUriString(googleAuthorizationUri)
+                .build()
+                .getQueryParams()
+                .getFirst("redirect_uri");
+        assertEquals("https://api.oshu.example/login/oauth2/code/google", callbackUri);
     }
 
     @Test

@@ -1,3 +1,9 @@
+server:
+  # Reverse proxies (for example, Nginx or a load balancer) pass the public
+  # scheme and host in X-Forwarded-* headers.  Use those values when building
+  # the OAuth callback URL.
+  forward-headers-strategy: framework
+
 spring:
   application:
     name: "OSHU API"
@@ -12,7 +18,9 @@ spring:
               - openid
               - profile
               - email
-            redirect-uri: "${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}"
+            # If GOOGLE_REDIRECT_URI is not set, create the callback from the
+            # public URL of the incoming request instead of localhost.
+            redirect-uri: "${GOOGLE_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}"
   datasource:
     url: "${DB_URL:jdbc:h2:mem:oshu;MODE=MySQL;DB_CLOSE_DELAY=-1}"
     username: "${DB_USERNAME:sa}"

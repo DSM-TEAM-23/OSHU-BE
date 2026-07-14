@@ -44,6 +44,10 @@ export OSHU_JWT_SECRET='충분히_긴_JWT_서명_시크릿'
 
 점주 API는 `POST /auth/login`으로 받은 `accessToken`을 Swagger의 **Authorize** 또는 `Authorization: Bearer {token}` 헤더에 넣어 호출합니다. 회원가입 계정은 기본적으로 `OWNER` 권한으로 저장되며, 로그인 토큰에는 `role=OWNER`와 `authorities=["ROLE_OWNER"]`가 포함됩니다.
 
+## Google 로그인
+
+클라이언트는 `GET /oauth2/authorization/google`로 **페이지 이동**을 시작해야 합니다. `fetch`나 Axios 호출로 시작하면 최종 `oshu://` 딥링크를 앱으로 열 수 없습니다. Google Cloud Console의 승인된 리디렉션 URI에는 배포 API의 `https://<api-domain>/login/oauth2/code/google`을 등록하세요. `GOOGLE_REDIRECT_URI`를 비워 두면 요청의 공개 도메인으로 이 주소를 자동 생성합니다.
+
 ## 검증
 
 ```bash
