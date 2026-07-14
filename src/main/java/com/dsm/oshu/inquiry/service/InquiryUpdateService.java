@@ -4,7 +4,7 @@ package com.dsm.oshu.inquiry.service;
 import com.dsm.oshu.inquiry.domain.Inquiry;
 import com.dsm.oshu.inquiry.domain.repository.InquiryRepository;
 import com.dsm.oshu.inquiry.presentation.dto.request.InquiryRequest;
-import com.dsm.oshu.inquiry.presentation.dto.response.InquiryResponse;
+import com.dsm.oshu.store.service.StoreReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,14 +14,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class InquiryUpdateService {
 
     private final InquiryRepository inquiryRepository;
+    private final StoreReader storeReader;
 
     @Transactional
-    public InquiryResponse execute(Long id, InquiryRequest request) {
-        Inquiry inquiry = inquiryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다. id=" + id));
+    public void execute(String ownerLoginId, Long inquiryId, InquiryRequest request) {
+        Inquiry inquiry = findInquiry(inquiryId);
+        storeReader.assertOwner(ownerLoginId, inquiry.getStore());
 
         inquiry.update(request.getTitle(), request.getContent(), request.getName(), request.getNumber());
+    }
 
-        return new InquiryResponse(inquiry);
+    private Inquiry findInquiry(Long inquiryId) {
+        return inquiryRepository.findById(inquiryId)
+                .orElseThrow(() -> new IllegalArgumentException("문의를 찾을 수 없습니다. id=" + inquiryId));
     }
 }
