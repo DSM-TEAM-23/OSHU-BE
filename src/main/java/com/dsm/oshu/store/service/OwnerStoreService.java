@@ -41,6 +41,7 @@ public class OwnerStoreService {
         Store store = stores.save(new Store(
                 request.name(),
                 request.category(),
+                request.customCategory(),
                 request.description(),
                 request.address(),
                 DEFAULT_STORE_LATITUDE,
@@ -58,7 +59,14 @@ public class OwnerStoreService {
     @Transactional
     public StoreDetailResponse updateStore(String ownerLoginId, Long storeId, StoreUpdateRequest request) {
         Store store = storeReader.requireOwnedStore(ownerLoginId, storeId);
-        store.update(request.description(), request.phone(), request.openingHours());
+        store.update(
+                request.name(),
+                request.category(),
+                request.customCategory(),
+                request.description(),
+                request.address(),
+                request.phone(),
+                request.openingHours());
         return storeDtoMapper.toDetail(store);
     }
 

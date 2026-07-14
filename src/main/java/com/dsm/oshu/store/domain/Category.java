@@ -9,7 +9,8 @@ public enum Category {
     CAFE("카페"),
     MART("마트"),
     MARKET("시장"),
-    GROCERY("식료품");
+    GROCERY("식료품"),
+    OTHER("기타");
 
     private final String label;
 

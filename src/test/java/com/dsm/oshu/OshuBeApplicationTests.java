@@ -102,6 +102,21 @@ class OshuBeApplicationTests {
                 .andExpect(jsonPath("$.longitude").value(127.3441));
     }
 
+    @Test
+    void ownerStoreCreationAcceptsCustomCategory() throws Exception {
+        signUp("custom-owner", "password123!");
+        String accessToken = login("custom-owner", "password123!");
+        String payload = """
+                {"name":"테스트 꽃집","category":"기타","customCategory":"꽃집","address":"유성구"}
+                """;
+        mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.category").value("꽃집"));
+    }
+
     private void signUp(String loginId, String password) throws Exception {
         mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)

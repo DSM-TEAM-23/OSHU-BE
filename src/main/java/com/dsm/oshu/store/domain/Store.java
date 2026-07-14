@@ -23,6 +23,8 @@ public class Store {
     @Column(nullable = false)
     private Category category;
 
+    private String customCategory;
+
     @Column(length = 1000)
     private String description;
 
@@ -52,15 +54,20 @@ public class Store {
     protected Store() {
     }
 
-    public Store(String name, Category category, String description, String address, Double latitude,
+    public Store(String name, Category category, String customCategory, String description, String address, Double latitude,
                  Double longitude, String phone, String openingHours, String ownerLoginId) {
         this.name = name; this.category = category; this.description = description; this.address = address;
+        this.customCategory = customCategory;
         this.latitude = latitude; this.longitude = longitude; this.phone = phone;
         this.openingHours = openingHours; this.ownerLoginId = ownerLoginId;
     }
 
-    public void update(String description, String phone, String openingHours) {
+    public void update(String name, Category category, String customCategory, String description, String address, String phone, String openingHours) {
+        if (name != null) this.name = name;
+        if (category != null) this.category = category;
+        this.customCategory = category == Category.OTHER ? customCategory : null;
         if (description != null) this.description = description;
+        if (address != null) this.address = address;
         if (phone != null) this.phone = phone;
         if (openingHours != null) this.openingHours = openingHours;
     }
@@ -73,6 +80,7 @@ public class Store {
     public Long getId() { return id; }
     public String getName() { return name; }
     public Category getCategory() { return category; }
+    public String getCustomCategory() { return customCategory; }
     public String getDescription() { return description; }
     public String getAddress() { return address; }
     public Double getLatitude() { return latitude; }

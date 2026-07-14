@@ -30,7 +30,7 @@ public class StoreDtoMapper {
         return new StoreCardResponse(
                 store.getId(),
                 store.getName(),
-                store.getCategory().getLabel(),
+                categoryLabel(store),
                 store.getAddress(),
                 store.getLatitude(),
                 store.getLongitude(),
@@ -43,7 +43,7 @@ public class StoreDtoMapper {
         return new StoreDetailResponse(
                 store.getId(),
                 store.getName(),
-                store.getCategory().getLabel(),
+                categoryLabel(store),
                 store.getDescription(),
                 store.getAddress(),
                 store.getLatitude(),
@@ -72,5 +72,14 @@ public class StoreDtoMapper {
                 .anyMatch(sale -> sale.getStatus().equals("SCHEDULED")
                         && !now.isBefore(sale.getStartAt())
                         && !now.isAfter(sale.getEndAt()));
+    }
+
+    private String categoryLabel(Store store) {
+        if (store.getCategory() == com.dsm.oshu.store.domain.Category.OTHER
+                && store.getCustomCategory() != null
+                && !store.getCustomCategory().isBlank()) {
+            return store.getCustomCategory();
+        }
+        return store.getCategory().getLabel();
     }
 }
