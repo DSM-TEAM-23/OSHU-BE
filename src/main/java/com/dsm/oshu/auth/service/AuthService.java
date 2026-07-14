@@ -6,7 +6,6 @@ import com.dsm.oshu.auth.presentation.dto.SignUpRequest;
 import com.dsm.oshu.auth.presentation.dto.TokenResponse;
 import com.dsm.oshu.auth.domain.Account;
 import com.dsm.oshu.auth.domain.AccountRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private final AccountRepository accounts;
     private final PasswordEncoder passwordEncoder;
-    private final String ownerToken;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthService(AccountRepository accounts, PasswordEncoder passwordEncoder,
-                                  @Value("${oshu.owner-token}") String ownerToken) {
+    public AuthService(AccountRepository accounts, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
         this.accounts = accounts;
         this.passwordEncoder = passwordEncoder;
-        this.ownerToken = ownerToken;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Transactional
@@ -40,7 +38,6 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), account.getPassword())) {
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
-        // Development token: replace this static token with signed JWT issuance before deployment.
-        return new TokenResponse(ownerToken, "Bearer");
+        return new TokenResponse(jwtTokenProvider.createAccessToken(account), "Bearer");
     }
 }

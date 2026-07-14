@@ -1,5 +1,6 @@
 package com.dsm.oshu.config;
 
+import com.dsm.oshu.auth.service.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,7 +32,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, OwnerTokenAuthenticationFilter ownerTokenFilter) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         return http.cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -42,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/owner/**").hasRole("OWNER")
                         .anyRequest().denyAll())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-                .addFilterBefore(ownerTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -67,18 +68,26 @@ public class SecurityConfig {
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
     @Component
-    static class OwnerTokenAuthenticationFilter extends OncePerRequestFilter {
-        private final String ownerToken;
-        OwnerTokenAuthenticationFilter(@Value("${oshu.owner-token}") String ownerToken) { this.ownerToken = ownerToken; }
+    static class JwtAuthenticationFilter extends OncePerRequestFilter {
+        private final JwtTokenProvider jwtTokenProvider;
+        JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) { this.jwtTokenProvider = jwtTokenProvider; }
 
         @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
             String header = request.getHeader("Authorization");
-            if (("Bearer " + ownerToken).equals(header)) {
-                var authentication = new UsernamePasswordAuthenticationToken("owner", null,
-                        List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
-                org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (header != null && header.startsWith("Bearer ")) {
+                String token = header.substring(7);
+                try {
+                    var jwt = jwtTokenProvider.decode(token);
+                    var authorities = jwtTokenProvider.extractAuthorities(jwt).stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .toList();
+                    var authentication = new UsernamePasswordAuthenticationToken(jwt.getSubject(), null, authorities);
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (RuntimeException ignored) {
+                    org.springframework.security.core.context.SecurityContextHolder.clearContext();
+                }
             }
             filterChain.doFilter(request, response);
         }

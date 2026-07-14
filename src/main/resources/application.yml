@@ -14,4 +14,6 @@ oshu:
   public-data:
     base-url: "https://apis.data.go.kr/B553077/api/open/sdsc2"
     service-key: "${PUBLIC_DATA_SERVICE_KEY:}"
-  owner-token: "${OSHU_OWNER_TOKEN:oshu-owner-dev-token}"
+  jwt:
+    secret: "${OSHU_JWT_SECRET:oshu-dev-jwt-secret-key-that-should-be-overridden}"
+    access-token-expiration-seconds: "${OSHU_JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:43200}"

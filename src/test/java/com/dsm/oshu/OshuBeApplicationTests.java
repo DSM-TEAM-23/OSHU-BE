@@ -7,11 +7,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -19,6 +22,9 @@ import org.springframework.test.web.servlet.MockMvc;
 class OshuBeApplicationTests {
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void contextLoads() {
@@ -51,15 +57,66 @@ class OshuBeApplicationTests {
     }
 
     @Test
+    void loginTokenContainsOwnerRoleAndAllowsOwnerStoresAccess() throws Exception {
+        signUp("test-owner", "password123!");
+
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"loginId":"test-owner","password":"password123!"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isString())
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String accessToken = body.get("accessToken").asText();
+        String[] tokenParts = accessToken.split("\\.");
+        String payloadJson = new String(java.util.Base64.getUrlDecoder().decode(tokenParts[1]), java.nio.charset.StandardCharsets.UTF_8);
+        JsonNode payload = objectMapper.readTree(payloadJson);
+
+        org.assertj.core.api.Assertions.assertThat(payload.get("role").asText()).isEqualTo("OWNER");
+        org.assertj.core.api.Assertions.assertThat(payload.get("authorities").get(0).asText()).isEqualTo("ROLE_OWNER");
+
+        mockMvc.perform(get("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void ownerStoreCreationAcceptsKoreanCategory() throws Exception {
+        signUp("store-owner", "password123!");
+        String accessToken = login("store-owner", "password123!");
         String payload = """
                 {"name":"테스트 카페","category":"카페","address":"유성구","latitude":36.36,"longitude":127.34}
                 """;
         mockMvc.perform(post("/owner/stores")
-                        .header("Authorization", "Bearer oshu-owner-dev-token")
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.category").value("카페"));
+    }
+
+    private void signUp(String loginId, String password) throws Exception {
+        mockMvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"loginId":"%s","password":"%s"}
+                                """.formatted(loginId, password)))
+                .andExpect(status().isCreated());
+    }
+
+    private String login(String loginId, String password) throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"loginId":"%s","password":"%s"}
+                                """.formatted(loginId, password)))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
     }
 }
