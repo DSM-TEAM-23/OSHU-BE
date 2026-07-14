@@ -3,6 +3,7 @@ package com.dsm.oshu.inquiry.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -24,4 +25,20 @@ public class Post {
     private String name;
     @Column(name = "user_number", nullable = false)
     private String number;
+
+    @Builder
+    public Post(String title, String content, String name, String number){
+        this.title = title;
+        this.content = content;
+        this.name = name;
+        this.number = number;
+    }
+
+    public void update(String title, String content, String name, String number){
+        this.title = title;
+        this.content = content;
+        this.name = name;
+        this.number = number;
+    }
 }
+
