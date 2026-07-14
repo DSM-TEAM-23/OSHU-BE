@@ -133,6 +133,39 @@ class OshuBeApplicationTests {
     }
 
     @Test
+    void publicInquiryCreationIsVisibleToStoreOwner() throws Exception {
+        signUp("inquiry-owner", "password123!");
+        String accessToken = login("inquiry-owner", "password123!");
+        String storePayload = """
+                {"name":"문의 테스트 가게","category":"카페","address":"유성구"}
+                """;
+        MvcResult storeResult = mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(storePayload))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long storeId = objectMapper.readTree(storeResult.getResponse().getContentAsString()).get("storeId").asLong();
+
+        String inquiryPayload = """
+                {"title":"단체 예약 문의","content":"이번 주 금요일 저녁 예약이 가능한가요?","name":"김유저","number":"010-1234-5678"}
+                """;
+
+        mockMvc.perform(post("/inquiry/store/" + storeId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(inquiryPayload))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/inquiry/store/" + storeId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("단체 예약 문의"))
+                .andExpect(jsonPath("$[0].name").value("김유저"))
+                .andExpect(jsonPath("$[0].number").value("010-1234-5678"));
+    }
+
+    @Test
     void ownerImageUploadReturnsPublicPath() throws Exception {
         signUp("upload-owner", "password123!");
         String accessToken = login("upload-owner", "password123!");
