@@ -1006,6 +1006,8 @@ components:
           format: double
         crowdLevel:
           type: string
+        openingHours:
+          type: string
         timeSaleActive:
           type: boolean
         externalData:

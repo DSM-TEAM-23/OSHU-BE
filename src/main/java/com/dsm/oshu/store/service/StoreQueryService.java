@@ -57,7 +57,7 @@ public class StoreQueryService {
         if (!publicStores.isEmpty()) {
             return publicStores.stream()
                     .map(store -> new StoreCardResponse(null, store.name(), store.category(),
-                            store.address(), store.latitude(), store.longitude(), null, false, true))
+                            store.address(), store.latitude(), store.longitude(), null, null, false, true))
                     .toList();
         }
         return stores.findAll().stream()

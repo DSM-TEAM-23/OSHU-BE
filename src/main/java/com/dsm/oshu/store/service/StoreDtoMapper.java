@@ -35,6 +35,7 @@ public class StoreDtoMapper {
                 store.getLatitude(),
                 store.getLongitude(),
                 store.getCrowdLevel().name(),
+                store.getOpeningHours(),
                 hasActiveTimeSale(store.getId()),
                 false);
     }
