@@ -14,10 +14,7 @@ FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
-RUN useradd --system --create-home spring
 COPY --from=build /workspace/build/libs/*.jar app.jar
-
-USER spring
 
 EXPOSE 8080
 
