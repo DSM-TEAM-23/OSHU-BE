@@ -113,6 +113,50 @@ class OshuBeApplicationTests {
     }
 
     @Test
+    void mapStoresIncludesUpcomingTimeSaleScheduleAndDiscountRate() throws Exception {
+        signUp("upcoming-map-time-sale-owner", "password123!");
+        String accessToken = login("upcoming-map-time-sale-owner", "password123!");
+        MvcResult storeResult = mockMvc.perform(post("/owner/stores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"예정 지도 할인 테스트","category":"카페","address":"유성구"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long storeId = objectMapper.readTree(storeResult.getResponse().getContentAsString()).get("storeId").asLong();
+        LocalDateTime now = LocalDateTime.now();
+
+        mockMvc.perform(post("/owner/stores/" + storeId + "/time-sales")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"productName":"예정 할인 커피","originalPrice":6000,"salePrice":4500,
+                                "startAt":"%s","endAt":"%s"}
+                                """.formatted(now.plusHours(1), now.plusHours(2))))
+                .andExpect(status().isCreated());
+
+        MvcResult mapResult = mockMvc.perform(get("/stores/map")
+                        .param("latitude", "36.3628").param("longitude", "127.3441"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode mappedStores = objectMapper.readTree(mapResult.getResponse().getContentAsString());
+        JsonNode mappedStore = null;
+        for (JsonNode store : mappedStores) {
+            if (storeId == store.get("storeId").asLong()) {
+                mappedStore = store;
+                break;
+            }
+        }
+
+        assertNotNull(mappedStore);
+        assertEquals(false, mappedStore.get("timeSaleActive").asBoolean());
+        assertEquals(25, mappedStore.get("discountRate").asInt());
+        assertEquals(true, mappedStore.get("timeSaleStartAt").isTextual());
+        assertEquals(true, mappedStore.get("timeSaleEndAt").isTextual());
+    }
+
+    @Test
     void corsPreflightAllowsVercelFrontend() throws Exception {
         String origin = "https://oshu-fe.vercel.app";
         mockMvc.perform(options("/stores")

@@ -64,7 +64,8 @@ public class StoreDtoMapper {
     }
 
     public MapStoreResponse toMap(Store store) {
-        TimeSale activeTimeSale = findActiveTimeSale(store.getId());
+        LocalDateTime now = LocalDateTime.now();
+        TimeSale timeSale = findActiveOrUpcomingTimeSale(store.getId(), now);
         return new MapStoreResponse(
                 store.getId(),
                 store.getName(),
@@ -74,11 +75,11 @@ public class StoreDtoMapper {
                 store.getLongitude(),
                 store.getCrowdLevel().name(),
                 store.getOpeningHours(),
-                activeTimeSale != null,
+                timeSale != null && isActive(timeSale, now),
                 false,
-                activeTimeSale == null ? null : activeTimeSale.getStartAt(),
-                activeTimeSale == null ? null : activeTimeSale.getEndAt(),
-                activeTimeSale == null ? null : discountRate(activeTimeSale));
+                timeSale == null ? null : timeSale.getStartAt(),
+                timeSale == null ? null : timeSale.getEndAt(),
+                timeSale == null ? null : discountRate(timeSale));
     }
 
     public CrowdStatusResponse toCrowd(Store store) {
@@ -89,17 +90,23 @@ public class StoreDtoMapper {
     }
 
     public boolean hasActiveTimeSale(Long storeId) {
-        return findActiveTimeSale(storeId) != null;
+        LocalDateTime now = LocalDateTime.now();
+        return timeSales.findByStoreId(storeId).stream().anyMatch(sale -> isActive(sale, now));
     }
 
-    private TimeSale findActiveTimeSale(Long storeId) {
-        LocalDateTime now = LocalDateTime.now();
+    private TimeSale findActiveOrUpcomingTimeSale(Long storeId, LocalDateTime now) {
         return timeSales.findByStoreId(storeId).stream()
                 .filter(sale -> sale.getStatus().equals("SCHEDULED")
-                        && !now.isBefore(sale.getStartAt())
                         && !now.isAfter(sale.getEndAt()))
-                .min(Comparator.comparing(TimeSale::getEndAt))
+                .min(Comparator.comparing((TimeSale sale) -> now.isBefore(sale.getStartAt()))
+                        .thenComparing(TimeSale::getStartAt))
                 .orElse(null);
+    }
+
+    private boolean isActive(TimeSale sale, LocalDateTime now) {
+        return sale.getStatus().equals("SCHEDULED")
+                && !now.isBefore(sale.getStartAt())
+                && !now.isAfter(sale.getEndAt());
     }
 
     private int discountRate(TimeSale timeSale) {

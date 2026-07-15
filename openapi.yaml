@@ -1151,17 +1151,17 @@ components:
           type: string
           format: date-time
           nullable: true
-          description: 활성 타임세일 시작 시각
+          description: 진행 중이거나 예정된 타임세일 시작 시각
         timeSaleEndAt:
           type: string
           format: date-time
           nullable: true
-          description: 활성 타임세일 종료 시각
+          description: 진행 중이거나 예정된 타임세일 종료 시각
         discountRate:
           type: integer
           format: int32
           nullable: true
-          description: 활성 타임세일의 할인율(%)
+          description: 진행 중이거나 예정된 타임세일의 할인율(%)
     PageResponsePromotionResponse:
       type: object
       properties:
